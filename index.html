@@ -2,23 +2,24 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>Mini LoL - 정식 개선판</title>
+<title>Mini LoL - 소환사의 협곡 5v5 에디션</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;user-select:none}
   html,body{width:100%;height:100%;overflow:hidden;background:#0a1428;font-family:'Malgun Gothic',sans-serif;color:#f0e6d2}
-  canvas{display:block;width:100%;height:100%}
+  canvas{display:block}
+  #c{width:100%;height:100%}
 
-  /* 상단 정보 */
-  #top{position:fixed;top:12px;right:12px;background:rgba(1,10,19,.9);border:1px solid #c8aa6e;padding:7px 15px;border-radius:6px;display:flex;gap:16px;font-size:13px;font-weight:bold;z-index:20}
-  #guide{position:fixed;top:12px;left:12px;background:rgba(1,10,19,.85);border:1px solid #463714;padding:8px 13px;border-radius:6px;font-size:11.5px;line-height:1.55;z-index:20}
+  /* 상단 스코어보드 */
+  #top{position:fixed;top:12px;right:12px;background:rgba(1,10,19,.92);border:1px solid #c8aa6e;padding:7px 15px;border-radius:6px;display:flex;gap:14px;font-size:13px;font-weight:bold;z-index:20;box-shadow:0 2px 12px rgba(0,0,0,.7)}
+  #guide{position:fixed;top:12px;left:12px;background:rgba(1,10,19,.86);border:1px solid #463714;padding:8px 13px;border-radius:6px;font-size:11.5px;line-height:1.55;z-index:20}
 
-  /* 하단 HUD (잘림 방지: position: fixed & 적정 높이/비율 보장) */
+  /* 하단 HUD (화면 해상도 무관 온전한 중앙 배치) */
   #hud{
     position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
     display:flex;align-items:center;gap:12px;
     background:rgba(1,10,19,.95);padding:10px 16px;border-radius:10px;
     border:2px solid #c8aa6e;box-shadow:0 4px 24px rgba(0,0,0,.9);
-    z-index:30;max-width:calc(100vw - 530px);
+    z-index:30;max-width:calc(100vw - 480px);
   }
   #stats{font-size:11.5px;line-height:1.5;min-width:105px;border-right:1px solid #463714;padding-right:10px}
   .skill-area{display:flex;flex-direction:column;align-items:center}
@@ -38,21 +39,23 @@
   #mp{height:100%;background:linear-gradient(90deg,#2980b9,#3498db);width:100%;transition:width .08s}
   .btxt{position:absolute;inset:0;text-align:center;font-size:10.5px;line-height:14px;font-weight:bold;text-shadow:1px 1px 1px #000}
 
-  /* 6칸 인벤토리 */
+  /* 6칸 인벤토리 (1~6번 단축키 물약 사용 가능) */
   #inv-wrap{border-left:1px solid #463714;padding-left:10px;display:flex;flex-direction:column;gap:4px}
-  .inv-grid{display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px);gap:4px}
-  .inv-slot{width:42px;height:42px;background:#121619;border:1px solid #463714;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9.5px;line-height:1.1;text-align:center;color:#f1c40f;font-weight:bold;overflow:hidden;padding:2px}
+  .inv-grid{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,44px);gap:4px}
+  .inv-slot{width:44px;height:44px;background:#121619;border:1px solid #463714;border-radius:4px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;line-height:1.1;text-align:center;color:#f1c40f;font-weight:bold;overflow:hidden;padding:2px;cursor:pointer}
+  .inv-slot:hover{border-color:#c8aa6e}
   .inv-slot .ico{font-size:14px;margin-bottom:1px}
+  .inv-slot .num{position:absolute;top:1px;left:3px;font-size:8.5px;color:#aaa}
 
-  /* 우측 하단 미니맵 (잘림 방지) */
-  #minimap-box{position:fixed;bottom:14px;right:14px;background:rgba(1,10,19,.95);border:2px solid #c8aa6e;border-radius:6px;padding:5px;z-index:30;box-shadow:0 4px 20px rgba(0,0,0,.85)}
-  #minimap{display:block;background:#0d1b2a}
+  /* 우측 하단 정사각형 미니맵 */
+  #minimap-box{position:fixed;bottom:14px;right:14px;background:rgba(1,10,19,.95);border:2px solid #c8aa6e;border-radius:6px;padding:5px;z-index:30;box-shadow:0 4px 20px rgba(0,0,0,.9)}
+  #minimap{display:block;background:#0f241c;cursor:crosshair}
   #cam-status{font-size:10px;color:#c8aa6e;text-align:center;margin-top:3px}
 
   /* 상점 창 */
-  #shop{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:480px;background:rgba(1,10,19,.98);border:2px solid #c8aa6e;border-radius:10px;padding:18px;z-index:80;box-shadow:0 0 30px rgba(0,0,0,.95)}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
-  .item{background:#1e2328;border:1px solid #463714;padding:10px;border-radius:6px;cursor:pointer;transition:.12s}
+  #shop{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;background:rgba(1,10,19,.98);border:2px solid #c8aa6e;border-radius:10px;padding:18px;z-index:80;box-shadow:0 0 30px rgba(0,0,0,.95)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .item{background:#1e2328;border:1px solid #463714;padding:9px;border-radius:6px;cursor:pointer;transition:.12s}
   .item:hover{border-color:#c8aa6e;background:#282f37}
 
   /* 게임 종료 */
@@ -64,19 +67,23 @@
 <body oncontextmenu="return false;">
 
 <div id="guide">
-  <b>[롤 조작]</b> <b>우클릭</b>: 이동 및 타겟 공격 | <b>좌클릭</b>: UI 전용 | <b>A</b>: 사거리 표시 | <b>S</b>: 정지 | <b>Space</b>: 카메라 고정/해제 (해제 시 마우스 가장자리 이동)<br>
-  <b>Q</b>: 빛나는 파란 화살(30MP) | <b>W</b>: 전투 버프(40MP) | <b>E</b>: 비전 이동(50MP) | <b>R</b>: 궁극기(100MP) | <b>D</b>: 유체화 | <b>F</b>: 점멸 | <b>B</b>: 귀환 | <b>P</b>: 상점
+  <b>[소환사의 협곡 5v5]</b> <b>우클릭</b>: 이동/공격 | <b>미니맵 좌클릭</b>: 시점 이동 | <b>Space</b>: 카메라 고정/해제(마우스 끝 스크롤) | <b>A</b>: 사거리 | <b>S</b>: 정지<br>
+  <b>Q</b>: 파란 화살(30MP) | <b>W</b>: 전투 버프(40MP) | <b>E</b>: 비전 이동(50MP) | <b>R</b>: 궁극기(100MP) | <b>D</b>: 유체화 | <b>F</b>: 점멸 | <b>B</b>: 귀환 | <b>P</b>: 상점 | <b>1~6</b>: 물약 사용
 </div>
 
 <div id="top">
-  <span>K/D: <b id="kd">0 / 0</b></span>
+  <span style="color:#3498db">아군 킬: <b id="tk-blue">0</b></span>
+  <span>vs</span>
+  <span style="color:#e74c3c">적군 킬: <b id="tk-red">0</b></span>
+  <span>|</span>
+  <span>내 K/D: <b id="kd">0 / 0</b></span>
   <span>CS: <b id="cs">0</b></span>
   <span style="color:#f1c40f">골드: <b id="gold">500</b> G</span>
 </div>
 
 <div id="shop">
   <div style="display:flex;justify-content:space-between;align-items:center;color:#c8aa6e;font-weight:bold;border-bottom:1px solid #463714;padding-bottom:8px">
-    <span>아이템 상점 (아군 우물 안에서만 구매 가능)</span>
+    <span>아이템 상점 (아군 우물 안에서만 구매 가능 / 물약 1~6번 사용)</span>
     <span style="cursor:pointer;font-size:16px;padding:0 6px" onclick="toggleShop()">✕</span>
   </div>
   <div class="grid" id="items"></div>
@@ -86,9 +93,9 @@
   <div id="stats">
     <div>Lv.<b id="lv">1</b> (<span id="xp">0</span>%)</div>
     <div>스킬 포인트: <b id="sp" style="color:#f1c40f">1</b></div>
-    <div>공격력: <b id="ad">62</b></div>
+    <div>공격력: <b id="ad">64</b></div>
     <div>공격속도: <b id="as">1.00</b></div>
-    <div>이동속도: <b id="ms">335</b></div>
+    <div>이동속도: <b id="ms">345</b></div>
   </div>
   <div class="skill-area">
     <div class="row">
@@ -101,21 +108,25 @@
       <div class="slot spell" style="border-color:#c8aa6e" onclick="startRecall()">귀환<span class="key">B</span></div>
     </div>
     <div id="bars">
-      <div class="bar"><div id="hp"></div><div class="btxt" id="hpt">620 / 620</div></div>
-      <div class="bar"><div id="mp"></div><div class="btxt" id="mpt">360 / 360</div></div>
+      <div class="bar"><div id="hp"></div><div class="btxt" id="hpt">640 / 640</div></div>
+      <div class="bar"><div id="mp"></div><div class="btxt" id="mpt">380 / 380</div></div>
     </div>
   </div>
   <div id="inv-wrap">
     <div style="font-size:10.5px;color:#c8aa6e;text-align:center;cursor:pointer" onclick="toggleShop()">인벤토리 [P:상점]</div>
     <div class="inv-grid" id="inv-grid">
-      <div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div>
-      <div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div>
+      <div class="inv-slot" onclick="useItem(0)"><span class="num">1</span></div>
+      <div class="inv-slot" onclick="useItem(1)"><span class="num">2</span></div>
+      <div class="inv-slot" onclick="useItem(2)"><span class="num">3</span></div>
+      <div class="inv-slot" onclick="useItem(3)"><span class="num">4</span></div>
+      <div class="inv-slot" onclick="useItem(4)"><span class="num">5</span></div>
+      <div class="inv-slot" onclick="useItem(5)"><span class="num">6</span></div>
     </div>
   </div>
 </div>
 
 <div id="minimap-box">
-  <canvas id="minimap" width="230" height="70"></canvas>
+  <canvas id="minimap" width="210" height="210"></canvas>
   <div id="cam-status">카메라: 고정 (Space: 해제)</div>
 </div>
 
@@ -129,70 +140,149 @@ function resize(){ c.width = innerWidth; c.height = innerHeight; }
 resize();
 window.addEventListener('resize', resize);
 
-// 단일 라인 맵 크기
-const MAP_W = 3200, MAP_H = 960, LANE_Y = 460;
-let cam = {x: 0, y: 0, lock: true};
-let mouse = {x: innerWidth/2, y: innerHeight/2, wx: 420, wy: LANE_Y};
+// 3000x3000 소환사의 협곡 정사각형 맵
+const MAP_S = 3000;
+let cam = {x: 0, y: MAP_S - innerHeight, lock: true};
+let mouse = {x: innerWidth/2, y: innerHeight/2, wx: 420, wy: 2580};
 let spaceHeld = false, showRange = false, over = false;
+let teamKills = {blue: 0, red: 0};
 
+// 상점 데이터 (물약 포함)
 const shopData = [
-  {ico:"⚔️", n:"도란검", full:"도란의 검", d:"공격력 +15, 체력 +80", g:450, ad:15, as:0, hp:80, ms:0},
+  {ico:"🧪", n:"체력물약", full:"체력 물약 (1~6번 사용)", d:"사용 시 5초간 체력 150 회복", g:50, consumable:true, healHp:150, healMp:0},
+  {ico:"💧", n:"마나물약", full:"마나 물약 (1~6번 사용)", d:"사용 시 마나 120 즉시 회복", g:50, consumable:true, healHp:0, healMp:120},
+  {ico:"⚔️", n:"도란검", full:"도란의 검", d:"공격력 +15, 최대 체력 +80", g:450, ad:15, as:0, hp:80, ms:0},
   {ico:"👢", n:"광전사", full:"광전사의 군화", d:"이동속도 +45, 공속 +15%", g:500, ad:0, as:0.15, hp:0, ms:45},
   {ico:"🗡️", n:"BF대검", full:"B.F. 대검", d:"공격력 +40", g:1300, ad:40, as:0, hp:0, ms:0},
   {ico:"🏹", n:"유령무희", full:"유령 무희", d:"공속 +30%, 이동속도 +30", g:1400, ad:0, as:0.30, hp:0, ms:30},
   {ico:"🛡️", n:"워모그", full:"워모그의 갑옷", d:"최대 체력 +450", g:1600, ad:0, as:0, hp:450, ms:0},
-  {ico:"👑", n:"무한대검", full:"무한의 대검", d:"공격력 +80, 체력 +150", g:3400, ad:80, as:0.1, hp:150, ms:0}
+  {ico:"👑", n:"무한대검", full:"무한의 대검", d:"공격력 +80, 최대 체력 +150", g:3400, ad:80, as:0.1, hp:150, ms:0}
 ];
 
-// 플레이어 챔피언
+// 3개 공격로(탑, 미드, 바텀) 웨이포인트 정의
+// 아군 기지(남서쪽: 350, 2650) -> 적군 기지(북동쪽: 2650, 350)
+const LANE_PATHS = {
+  top: [
+    {x:360, y:2450}, {x:320, y:1650}, {x:320, y:850}, {x:380, y:380},
+    {x:850, y:320}, {x:1650, y:320}, {x:2450, y:360}, {x:2650, y:350}
+  ],
+  mid: [
+    {x:480, y:2520}, {x:950, y:2050}, {x:1500, y:1500},
+    {x:2050, y:950}, {x:2520, y:480}, {x:2650, y:350}
+  ],
+  bot: [
+    {x:550, y:2640}, {x:1350, y:2680}, {x:2150, y:2680}, {x:2620, y:2620},
+    {x:2680, y:2150}, {x:2680, y:1350}, {x:2640, y:550}, {x:2650, y:350}
+  ]
+};
+
+// 우물(남서쪽 아군 우물, 북동쪽 적군 우물)
+const wells = [
+  {team:'blue', x:210, y:2790, r:130},
+  {team:'red', x:2790, y:210, r:130}
+];
+
+// 구조물: 각 라인별 [1차 포탑(tier 1) -> 2차 포탑(tier 2) -> 억제기(tier 3)] + 넥서스(tier 4)
+// 앞선 건물이 파괴되어야 다음 건물을 공격할 수 있도록 tier 기반 무적 판정 적용
+let structs = [
+  // 블루팀 넥서스
+  {id:'b_nex', team:'blue', lane:'base', tier:4, type:'nexus', x:410, y:2590, r:52, hp:3500, mhp:3500, rng:0, ad:0, cd:0, target:null},
+  // 블루팀 탑 (1차 -> 2차 -> 억제기)
+  {id:'b_top1', team:'blue', lane:'top', tier:1, type:'tower', x:320, y:1250, r:32, hp:1600, mhp:1600, rng:290, ad:110, cd:0, target:null},
+  {id:'b_top2', team:'blue', lane:'top', tier:2, type:'tower', x:320, y:1850, r:32, hp:1800, mhp:1800, rng:290, ad:125, cd:0, target:null},
+  {id:'b_top3', team:'blue', lane:'top', tier:3, type:'inhib', x:340, y:2280, r:34, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null},
+  // 블루팀 미드 (1차 -> 2차 -> 억제기)
+  {id:'b_mid1', team:'blue', lane:'mid', tier:1, type:'tower', x:1220, y:1780, r:32, hp:1600, mhp:1600, rng:290, ad:110, cd:0, target:null},
+  {id:'b_mid2', team:'blue', lane:'mid', tier:2, type:'tower', x:900, y:2100, r:32, hp:1800, mhp:1800, rng:290, ad:125, cd:0, target:null},
+  {id:'b_mid3', team:'blue', lane:'mid', tier:3, type:'inhib', x:660, y:2340, r:34, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null},
+  // 블루팀 바텀 (1차 -> 2차 -> 억제기)
+  {id:'b_bot1', team:'blue', lane:'bot', tier:1, type:'tower', x:1750, y:2680, r:32, hp:1600, mhp:1600, rng:290, ad:110, cd:0, target:null},
+  {id:'b_bot2', team:'blue', lane:'bot', tier:2, type:'tower', x:1150, y:2680, r:32, hp:1800, mhp:1800, rng:290, ad:125, cd:0, target:null},
+  {id:'b_bot3', team:'blue', lane:'bot', tier:3, type:'inhib', x:720, y:2660, r:34, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null},
+
+  // 레드팀 넥서스
+  {id:'r_nex', team:'red', lane:'base', tier:4, type:'nexus', x:2590, y:410, r:52, hp:3500, mhp:3500, rng:0, ad:0, cd:0, target:null},
+  // 레드팀 탑 (1차 -> 2차 -> 억제기)
+  {id:'r_top1', team:'red', lane:'top', tier:1, type:'tower', x:1250, y:320, r:32, hp:1600, mhp:1600, rng:290, ad:110, cd:0, target:null},
+  {id:'r_top2', team:'red', lane:'top', tier:2, type:'tower', x:1850, y:320, r:32, hp:1800, mhp:1800, rng:290, ad:125, cd:0, target:null},
+  {id:'r_top3', team:'red', lane:'top', tier:3, type:'inhib', x:2280, y:340, r:34, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null},
+  // 레드팀 미드 (1차 -> 2차 -> 억제기)
+  {id:'r_mid1', team:'red', lane:'mid', tier:1, type:'tower', x:1780, y:1220, r:32, hp:1600, mhp:1600, rng:290, ad:110, cd:0, target:null},
+  {id:'r_mid2', team:'red', lane:'mid', tier:2, type:'tower', x:2100, y:900, r:32, hp:1800, mhp:1800, rng:290, ad:125, cd:0, target:null},
+  {id:'r_mid3', team:'red', lane:'mid', tier:3, type:'inhib', x:2340, y:660, r:34, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null},
+  // 레드팀 바텀 (1차 -> 2차 -> 억제기)
+  {id:'r_bot1', team:'red', lane:'bot', tier:1, type:'tower', x:2680, y:1750, r:32, hp:1600, mhp:1600, rng:290, ad:110, cd:0, target:null},
+  {id:'r_bot2', team:'red', lane:'bot', tier:2, type:'tower', x:2680, y:1150, r:32, hp:1800, mhp:1800, rng:290, ad:125, cd:0, target:null},
+  {id:'r_bot3', team:'red', lane:'bot', tier:3, type:'inhib', x:2660, y:720, r:34, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null}
+];
+
+// 구조물 무적(Invulnerable) 판정 함수
+function isStructInvulnerable(s){
+  if (s.hp <= 0) return true;
+  if (s.tier === 1) return false;
+  if (s.tier === 2 || s.tier === 3){
+    return structs.some(other => other.team === s.team && other.lane === s.lane && other.tier < s.tier && other.hp > 0);
+  }
+  if (s.tier === 4){
+    // 넥서스는 최소 1개 라인의 억제기(tier 3)가 파괴되어야 공격 가능
+    const anyInhibDown = structs.some(other => other.team === s.team && other.tier === 3 && other.hp <= 0);
+    return !anyInhibDown;
+  }
+  return false;
+}
+
+// 플레이어 챔피언 (나 - 블루팀 원딜/미드)
 const p = {
-  team:'blue', x:260, y:LANE_Y, tx:260, ty:LANE_Y, r:20,
-  hp:620, mhp:620, mp:360, mmp:360, ad:62, atkSpeed:1.0, ms:335, rng:270, atkCd:0,
+  isPlayer:true, name:'나 (플레이어)', team:'blue', x:310, y:2690, tx:310, ty:2690, r:20,
+  hp:640, mhp:640, mp:380, mmp:380, ad:64, atkSpeed:1.0, ms:345, rng:270, atkCd:0,
   lv:1, xp:0, mxp:100, skillPts:1, slv:{q:0,w:0,e:0,r:0},
   gold:500, k:0, d:0, cs:0, inv:[],
-  target:null, recall:0, respawn:0, facing:0,
+  target:null, recall:0, respawn:0, facing:-Math.PI/4, regenHoT:0,
   cd:{q:0,w:0,e:0,r:0,d:0,f:0}, mcd:{q:3,w:8,e:7,r:18,d:22,f:35}, buff:{w:0,d:0}
 };
 
-// 우물, 넥서스, 포탑
-const wells = [
-  {team:'blue', x:160, y:LANE_Y, r:110},
-  {team:'red', x:3040, y:LANE_Y, r:110}
-];
-let structs = [
-  {team:'blue', type:'nexus', x:380, y:LANE_Y, r:48, hp:3000, mhp:3000, rng:0, ad:0, cd:0, target:null},
-  {team:'blue', type:'tower', x:960, y:LANE_Y, r:35, hp:1800, mhp:1800, rng:315, ad:115, cd:0, target:null},
-  {team:'red', type:'tower', x:2240, y:LANE_Y, r:35, hp:1800, mhp:1800, rng:315, ad:115, cd:0, target:null},
-  {team:'red', type:'nexus', x:2820, y:LANE_Y, r:48, hp:3000, mhp:3000, rng:0, ad:0, cd:0, target:null}
+// 5대5 챔피언 구성 (아군 AI 4명 + 나 vs 적군 AI 5명)
+// 역할: 탑 1명, 미드 1명, 바텀 2명(원딜/서폿), 정글 1명
+let aiChamps = [
+  // 블루팀 AI 4명 (플레이어가 바텀 원딜 역할을 맡고 탑/미드/정글/서폿 AI 배치)
+  {name:'가렌(탑)', team:'blue', role:'top', x:340, y:2550, r:20, hp:720, mhp:720, ad:66, ms:330, rng:140, atkCd:0, qCd:0, respawn:0, facing:0},
+  {name:'아리(미드)', team:'blue', role:'mid', x:450, y:2650, r:20, hp:620, mhp:620, ad:60, ms:335, rng:260, atkCd:0, qCd:0, respawn:0, facing:0},
+  {name:'리신(정글)', team:'blue', role:'jungle', x:420, y:2520, r:20, hp:680, mhp:680, ad:65, ms:345, rng:150, atkCd:0, qCd:0, respawn:0, facing:0},
+  {name:'럭스(서폿)', team:'blue', role:'bot', x:460, y:2740, r:20, hp:600, mhp:600, ad:55, ms:330, rng:270, atkCd:0, qCd:0, respawn:0, facing:0},
+
+  // 레드팀 AI 5명 (탑 1, 미드 1, 바텀 2, 정글 1)
+  {name:'다리우스(탑)', team:'red', role:'top', x:2560, y:340, r:20, hp:730, mhp:730, ad:68, ms:330, rng:140, atkCd:0, qCd:0, respawn:0, facing:Math.PI},
+  {name:'제드(미드)', team:'red', role:'mid', x:2650, y:450, r:20, hp:630, mhp:630, ad:66, ms:340, rng:230, atkCd:0, qCd:0, respawn:0, facing:Math.PI},
+  {name:'카직스(정글)', team:'red', role:'jungle', x:2540, y:460, r:20, hp:670, mhp:670, ad:67, ms:345, rng:150, atkCd:0, qCd:0, respawn:0, facing:Math.PI},
+  {name:'징크스(원딜)', team:'red', role:'bot', x:2730, y:460, r:20, hp:610, mhp:610, ad:64, ms:330, rng:265, atkCd:0, qCd:0, respawn:0, facing:Math.PI},
+  {name:'쓰레쉬(서폿)', team:'red', role:'bot', x:2760, y:520, r:20, hp:660, mhp:660, ad:56, ms:325, rng:240, atkCd:0, qCd:0, respawn:0, facing:Math.PI}
 ];
 
-// 적 AI 챔피언
-const ai = {
-  team:'red', x:2600, y:LANE_Y, r:20, hp:650, mhp:650, ad:62, ms:320, rng:260,
-  atkCd:0, qCd:0, respawn:0, facing:Math.PI
-};
+function getAllChampions(){ return [p, ...aiChamps]; }
 
 let minions = [], projs = [], marks = [], dmgTexts = [], particles = [];
 
-// 상점 UI 초기화
+// 상점 UI 세팅
 shopData.forEach(it => {
   const d = document.createElement('div'); d.className = 'item';
-  d.innerHTML = `<div style="font-size:14px;font-weight:bold">${it.ico} ${it.full}</div>
-                 <div style="font-size:11px;color:#aaa;margin:4px 0">${it.d}</div>
+  d.innerHTML = `<div style="font-size:13px;font-weight:bold">${it.ico} ${it.full}</div>
+                 <div style="font-size:11px;color:#aaa;margin:3px 0">${it.d}</div>
                  <span style="color:#f1c40f;font-size:12px;font-weight:bold">${it.g} G</span>`;
   d.onclick = () => {
-    const inWell = Math.hypot(p.x - wells[0].x, p.y - wells[0].y) <= wells[0].r + 60;
+    const inWell = Math.hypot(p.x - wells[0].x, p.y - wells[0].y) <= wells[0].r + 70;
     if (!inWell) return addFloat(p.x, p.y - 30, "아군 우물 안에서만 구매 가능!", "#e74c3c");
     if (p.inv.length >= 6) return addFloat(p.x, p.y - 30, "인벤토리 6칸이 가득 찼습니다!", "#e74c3c");
     if (p.gold < it.g) return addFloat(p.x, p.y - 30, "골드가 부족합니다!", "#e74c3c");
     p.gold -= it.g;
-    p.ad += it.ad;
-    p.atkSpeed = +(p.atkSpeed + it.as).toFixed(2);
-    p.mhp += it.hp; p.hp += it.hp;
-    p.ms += it.ms;
-    p.inv.push({ico: it.ico, n: it.n});
+    if (!it.consumable){
+      p.ad += it.ad;
+      p.atkSpeed = +(p.atkSpeed + it.as).toFixed(2);
+      p.mhp += it.hp; p.hp += it.hp;
+      p.ms += it.ms;
+    }
+    p.inv.push({...it});
     renderInv();
-    addFloat(p.x, p.y - 30, `${it.full} 구매 완료!`, "#f1c40f");
+    addFloat(p.x, p.y - 30, `${it.n} 구매!`, "#f1c40f");
   };
   document.getElementById('items').appendChild(d);
 });
@@ -200,23 +290,39 @@ shopData.forEach(it => {
 function renderInv(){
   const slots = document.querySelectorAll('.inv-slot');
   slots.forEach((s, i) => {
-    if (p.inv[i]) s.innerHTML = `<div class="ico">${p.inv[i].ico}</div><div>${p.inv[i].n}</div>`;
-    else s.innerHTML = '';
+    const item = p.inv[i];
+    if (item) s.innerHTML = `<span class="num">${i+1}</span><div class="ico">${item.ico}</div><div>${item.n}</div>`;
+    else s.innerHTML = `<span class="num">${i+1}</span>`;
   });
+}
+
+// 1~6번 단축키 또는 슬롯 클릭으로 물약 사용
+function useItem(idx){
+  const item = p.inv[idx];
+  if (!item || !item.consumable || p.respawn > 0 || over) return;
+  if (item.healHp > 0){
+    p.regenHoT += item.healHp;
+    addFloat(p.x, p.y - 30, "체력 물약 사용! (+150 HP)", "#2ecc71");
+  }
+  if (item.healMp > 0){
+    p.mp = Math.min(p.mmp, p.mp + item.healMp);
+    addFloat(p.x, p.y - 30, "마나 물약 사용! (+120 MP)", "#3498db");
+  }
+  p.inv.splice(idx, 1);
+  renderInv();
 }
 
 function toggleShop(){
   const s = document.getElementById('shop');
   const isOpen = s.style.display === 'block';
-  if (!isOpen){
-    const inWell = Math.hypot(p.x - wells[0].x, p.y - wells[0].y) <= wells[0].r + 60;
-    if (!inWell) addFloat(p.x, p.y - 30, "상점 열람 중 (구매는 우물 안에서 가능)", "#f1c40f");
+  if (!isOpen && Math.hypot(p.x - wells[0].x, p.y - wells[0].y) > wells[0].r + 70){
+    addFloat(p.x, p.y - 30, "상점 열람 중 (구매는 아군 우물 안에서 가능)", "#f1c40f");
   }
   s.style.display = isOpen ? 'none' : 'block';
 }
 
 function addFloat(x, y, text, color, isDmg = false){
-  dmgTexts.push({x: x + (Math.random()-0.5)*14, y, text, color, life: isDmg ? 42 : 55, isDmg});
+  dmgTexts.push({x: x + (Math.random()-0.5)*14, y, text, color, life: isDmg ? 40 : 52, isDmg});
 }
 
 function levelUpSkill(k){
@@ -243,23 +349,48 @@ function gainXp(v){
     p.xp -= p.mxp; p.lv++; p.skillPts++;
     p.mxp = Math.floor(p.mxp * 1.25);
     p.mhp += 90; p.hp += 90; p.mmp += 40; p.mp += 40; p.ad += 5;
-    addFloat(p.x, p.y - 40, `LEVEL UP! (Lv.${p.lv})`, "#2ecc71");
+    addFloat(p.x, p.y - 42, `LEVEL UP! (Lv.${p.lv})`, "#2ecc71");
   }
   updateSkillUI();
 }
 
-// 20초마다 양쪽 넥서스에서 미니언 3마리 생성 (일렬 간격을 두고 스폰)
+// 30초마다 양쪽 넥서스에서 [탑, 미드, 바텀] 3개 경로로 각 3마리(총 9마리) 미니언 생성
 function spawnWave(){
   if (over) return;
-  for (let i = 0; i < 3; i++){
-    setTimeout(() => {
-      minions.push({team:'blue', x:450 - i*38, y:LANE_Y + (i-1)*18, r:13, hp:240, mhp:240, ad:22, rng:115, cd:0, spd:1.75});
-      minions.push({team:'red', x:2750 + i*38, y:LANE_Y + (i-1)*18, r:13, hp:240, mhp:240, ad:22, rng:115, cd:0, spd:1.75});
-    }, i * 550);
-  }
+  ['top', 'mid', 'bot'].forEach(lane => {
+    const pathBlue = LANE_PATHS[lane];
+    const pathRed = [...LANE_PATHS[lane]].reverse();
+    for (let i = 0; i < 3; i++){
+      setTimeout(() => {
+        if (over) return;
+        minions.push({
+          team:'blue', lane, path:pathBlue, wpIdx:0,
+          x:440 + (Math.random()-0.5)*20, y:2560 + (Math.random()-0.5)*20,
+          r:12, hp:240, mhp:240, ad:22, rng:115, cd:0, spd:1.85
+        });
+        minions.push({
+          team:'red', lane, path:pathRed, wpIdx:0,
+          x:2560 + (Math.random()-0.5)*20, y:440 + (Math.random()-0.5)*20,
+          r:12, hp:240, mhp:240, ad:22, rng:115, cd:0, spd:1.85
+        });
+      }, i * 500);
+    }
+  });
 }
 spawnWave();
-setInterval(spawnWave, 20000);
+setInterval(spawnWave, 30000);
+
+// 미니맵 좌클릭 시 카메라 시점 즉시 이동
+mc.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const rect = mc.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) / mc.width * MAP_S;
+  const my = (e.clientY - rect.top) / mc.height * MAP_S;
+  cam.lock = false;
+  document.getElementById('cam-status').innerText = "카메라: 자유 (Space: 내 챔피언 고정)";
+  cam.x = Math.max(0, Math.min(MAP_S - c.width, mx - c.width / 2));
+  cam.y = Math.max(0, Math.min(MAP_S - c.height, my - c.height / 2));
+});
 
 // 마우스 추적
 window.addEventListener('mousemove', e => {
@@ -267,24 +398,28 @@ window.addEventListener('mousemove', e => {
   mouse.wx = mouse.x + cam.x; mouse.wy = mouse.y + cam.y;
 });
 
-// 오직 우클릭으로만 이동 및 적 타겟팅(기본 공격)
+// 우클릭 이동 및 적 타겟팅(기본 공격)
 window.addEventListener('mousedown', e => {
   if (e.button !== 2 || p.respawn > 0 || over) return;
   p.recall = 0;
   const wx = e.clientX + cam.x, wy = e.clientY + cam.y;
   const enemies = [
-    ...(ai.respawn <= 0 ? [ai] : []),
+    ...aiChamps.filter(a => a.team === 'red' && a.respawn <= 0),
     ...minions.filter(m => m.team === 'red'),
     ...structs.filter(s => s.team === 'red' && s.hp > 0)
   ];
-  const hit = enemies.find(en => Math.hypot(wx - en.x, wy - en.y) <= en.r + 15);
+  const hit = enemies.find(en => Math.hypot(wx - en.x, wy - en.y) <= en.r + 16);
   if (hit){
+    if (hit.type && isStructInvulnerable(hit)){
+      addFloat(hit.x, hit.y - 30, "앞선 포탑/억제기를 먼저 파괴해야 합니다!", "#f1c40f");
+      return;
+    }
     p.target = hit;
     marks.push({x: hit.x, y: hit.y, col: '#e74c3c', a: 1});
   } else {
     p.target = null;
-    p.tx = Math.max(40, Math.min(MAP_W - 40, wx));
-    p.ty = Math.max(140, Math.min(MAP_H - 140, wy));
+    p.tx = Math.max(50, Math.min(MAP_S - 50, wx));
+    p.ty = Math.max(50, Math.min(MAP_S - 50, wy));
     marks.push({x: p.tx, y: p.ty, col: '#2ecc71', a: 1});
   }
 });
@@ -302,12 +437,13 @@ window.addEventListener('keyup', e => {
 
 window.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
+  if (['1','2','3','4','5','6'].includes(k)){ useItem(parseInt(k) - 1); return; }
   if (k === 'a'){ showRange = true; return; }
   if (k === 's'){ p.tx = p.x; p.ty = p.y; p.target = null; return; }
   if (k === ' '){
     if (!spaceHeld){
       cam.lock = !cam.lock;
-      document.getElementById('cam-status').innerText = cam.lock ? "카메라: 고정 (Space: 해제)" : "카메라: 자유 (가장자리 이동 / Space: 고정)";
+      document.getElementById('cam-status').innerText = cam.lock ? "카메라: 고정 (Space: 해제)" : "카메라: 자유 (Space: 내 챔피언 고정)";
     }
     spaceHeld = true;
     return;
@@ -318,16 +454,14 @@ window.addEventListener('keydown', e => {
 
   const ang = Math.atan2(mouse.wy - p.y, mouse.wx - p.x);
 
-  // Q 스킬: 빛나는 파란 화살 투사체
   if (k === 'q'){
     if (p.slv.q <= 0) return addFloat(p.x, p.y - 25, "Q 스킬을 먼저 배우세요 (+)", "#f1c40f");
     if (p.cd.q > 0) return;
     if (p.mp < 30) return addFloat(p.x, p.y - 25, "마나가 부족합니다!", "#3498db");
     p.mp -= 30; p.cd.q = Math.max(1.2, p.mcd.q - (p.slv.q - 1) * 0.3); p.recall = 0; p.facing = ang;
-    const dmg = p.ad * 1.25 + 45 + p.slv.q * 25;
-    projs.push({type:'arrow', team:'blue', owner:p, x:p.x, y:p.y, vx:Math.cos(ang)*17, vy:Math.sin(ang)*17, ang, r:10, dmg, life:52, col:'#00d2ff', pierce:false});
+    const dmg = p.ad * 1.3 + 50 + p.slv.q * 25;
+    projs.push({type:'arrow', team:'blue', owner:p, x:p.x, y:p.y, vx:Math.cos(ang)*18, vy:Math.sin(ang)*18, ang, r:10, dmg, life:55, col:'#00d2ff', pierce:false});
   }
-  // W 스킬
   if (k === 'w'){
     if (p.slv.w <= 0) return addFloat(p.x, p.y - 25, "W 스킬을 먼저 배우세요 (+)", "#f1c40f");
     if (p.cd.w > 0) return;
@@ -335,54 +469,59 @@ window.addEventListener('keydown', e => {
     p.mp -= 40; p.cd.w = p.mcd.w; p.buff.w = 3.0 + p.slv.w * 0.4;
     addFloat(p.x, p.y - 30, `전투 버프 Lv.${p.slv.w}!`, "#f1c40f");
   }
-  // E 스킬
   if (k === 'e'){
     if (p.slv.e <= 0) return addFloat(p.x, p.y - 25, "E 스킬을 먼저 배우세요 (+)", "#f1c40f");
     if (p.cd.e > 0) return;
     if (p.mp < 50) return addFloat(p.x, p.y - 25, "마나가 부족합니다!", "#3498db");
     p.mp -= 50; p.cd.e = Math.max(3, p.mcd.e - (p.slv.e - 1) * 0.5); p.recall = 0; p.facing = ang;
-    const dist = Math.min(180 + p.slv.e * 15, Math.hypot(mouse.wx - p.x, mouse.wy - p.y));
-    p.x = Math.max(40, Math.min(MAP_W - 40, p.x + Math.cos(ang) * dist));
-    p.y = Math.max(140, Math.min(MAP_H - 140, p.y + Math.sin(ang) * dist));
+    const dist = Math.min(190 + p.slv.e * 15, Math.hypot(mouse.wx - p.x, mouse.wy - p.y));
+    p.x = Math.max(50, Math.min(MAP_S - 50, p.x + Math.cos(ang) * dist));
+    p.y = Math.max(50, Math.min(MAP_S - 50, p.y + Math.sin(ang) * dist));
     p.tx = p.x; p.ty = p.y;
   }
-  // R 궁극기
   if (k === 'r'){
     if (p.slv.r <= 0) return addFloat(p.x, p.y - 25, "R 궁극기를 먼저 배우세요 (+)", "#f1c40f");
     if (p.cd.r > 0) return;
     if (p.mp < 100) return addFloat(p.x, p.y - 25, "마나가 부족합니다!", "#3498db");
     p.mp -= 100; p.cd.r = Math.max(10, p.mcd.r - (p.slv.r - 1) * 3); p.recall = 0; p.facing = ang;
-    const dmg = p.ad * 1.6 + 160 + p.slv.r * 90;
-    projs.push({type:'ult', team:'blue', owner:p, x:p.x, y:p.y, vx:Math.cos(ang)*19, vy:Math.sin(ang)*19, ang, r:30, dmg, life:130, col:'#f39c12', pierce:true});
+    const dmg = p.ad * 1.6 + 170 + p.slv.r * 90;
+    projs.push({type:'ult', team:'blue', owner:p, x:p.x, y:p.y, vx:Math.cos(ang)*19, vy:Math.sin(ang)*19, ang, r:30, dmg, life:135, col:'#f39c12', pierce:true});
   }
-  // D 유체화
   if (k === 'd' && p.cd.d <= 0){ p.cd.d = p.mcd.d; p.buff.d = 6.0; addFloat(p.x, p.y - 30, "유체화!", "#74b9ff"); }
-  // F 점멸
   if (k === 'f' && p.cd.f <= 0){
     p.cd.f = p.mcd.f; p.recall = 0; p.facing = ang;
-    p.x = Math.max(40, Math.min(MAP_W - 40, p.x + Math.cos(ang) * 230));
-    p.y = Math.max(140, Math.min(MAP_H - 140, p.y + Math.sin(ang) * 230));
+    p.x = Math.max(50, Math.min(MAP_S - 50, p.x + Math.cos(ang) * 240));
+    p.y = Math.max(50, Math.min(MAP_S - 50, p.y + Math.sin(ang) * 240));
     p.tx = p.x; p.ty = p.y; addFloat(p.x, p.y - 30, "점멸!", "#ffeaa7");
   }
 });
+
+// 정글러 순찰 좌표
+const JUNGLE_SPOTS = [{x:1000,y:1350}, {x:1350,y:1000}, {x:1500,y:1500}, {x:1750,y:1950}, {x:1950,y:1750}];
 
 function update(){
   if (over) return;
   const dt = 1 / 60;
 
-  p.gold += dt * 2.0;
+  p.gold += dt * 2.2;
   p.mp = Math.min(p.mmp, p.mp + dt * 6);
-
-  // 우물 회복
-  if (p.respawn <= 0 && Math.hypot(p.x - wells[0].x, p.y - wells[0].y) <= wells[0].r + 40){
-    p.hp = Math.min(p.mhp, p.hp + dt * 240);
-    p.mp = Math.min(p.mmp, p.mp + dt * 240);
-  }
-  if (ai.respawn <= 0 && Math.hypot(ai.x - wells[1].x, ai.y - wells[1].y) <= wells[1].r + 40){
-    ai.hp = Math.min(ai.mhp, ai.hp + dt * 240);
+  if (p.regenHoT > 0){
+    const heal = Math.min(p.regenHoT, dt * 35);
+    p.hp = Math.min(p.mhp, p.hp + heal);
+    p.regenHoT -= heal;
   }
 
-  // 쿨타임 업데이트
+  // 우물 회복 (아군 남서쪽 / 적군 북동쪽)
+  getAllChampions().forEach(ch => {
+    if (ch.respawn > 0) return;
+    const w = ch.team === 'blue' ? wells[0] : wells[1];
+    if (Math.hypot(ch.x - w.x, ch.y - w.y) <= w.r + 40){
+      ch.hp = Math.min(ch.mhp, ch.hp + dt * 260);
+      if (ch.isPlayer) ch.mp = Math.min(ch.mmp, ch.mp + dt * 260);
+    }
+  });
+
+  // 쿨타임 표시
   for (let k in p.cd){
     if (p.cd[k] > 0) p.cd[k] = Math.max(0, p.cd[k] - dt);
     const el = document.getElementById('cd-' + k);
@@ -395,27 +534,31 @@ function update(){
 
   const curAtkSpd = +(p.atkSpeed * (p.buff.w > 0 ? 1.35 : 1.0)).toFixed(2);
 
-  // 플레이어 이동 & 기본 공격
+  // 플레이어 이동 & 공격
   if (p.respawn > 0){
     p.respawn -= dt;
-    if (p.respawn <= 0){ p.x = wells[0].x + 50; p.y = LANE_Y; p.tx = p.x; p.ty = p.y; p.hp = p.mhp; p.mp = p.mmp; }
+    if (p.respawn <= 0){ p.x = wells[0].x + 70; p.y = wells[0].y - 70; p.tx = p.x; p.ty = p.y; p.hp = p.mhp; p.mp = p.mmp; }
   } else {
     if (p.recall > 0){
       p.recall -= dt;
-      if (p.recall <= 0){ p.x = wells[0].x + 50; p.y = LANE_Y; p.tx = p.x; p.ty = p.y; addFloat(p.x, p.y - 30, "귀환 완료!", "#3498db"); }
+      if (p.recall <= 0){ p.x = wells[0].x + 70; p.y = wells[0].y - 70; p.tx = p.x; p.ty = p.y; addFloat(p.x, p.y - 30, "귀환 완료!", "#3498db"); }
     }
     const spd = (p.ms / 60) * (p.buff.w > 0 ? 1.2 : 1) * (p.buff.d > 0 ? 1.35 : 1);
     if (p.target && p.target.hp > 0 && (!p.target.respawn || p.target.respawn <= 0)){
-      const dist = Math.hypot(p.target.x - p.x, p.target.y - p.y);
-      const a = Math.atan2(p.target.y - p.y, p.target.x - p.x);
-      p.facing = a;
-      if (dist <= p.rng + p.target.r){
-        if (p.atkCd <= 0){
-          p.atkCd = 1 / curAtkSpd;
-          projs.push({type:'aa', team:'blue', owner:p, x:p.x, y:p.y, vx:Math.cos(a)*17, vy:Math.sin(a)*17, ang:a, r:5, dmg:p.ad, life:30, col:'#ffeaa7', pierce:false, homing:p.target});
-        }
+      if (p.target.type && isStructInvulnerable(p.target)){
+        p.target = null;
       } else {
-        p.x += Math.cos(a) * spd; p.y += Math.sin(a) * spd;
+        const dist = Math.hypot(p.target.x - p.x, p.target.y - p.y);
+        const a = Math.atan2(p.target.y - p.y, p.target.x - p.x);
+        p.facing = a;
+        if (dist <= p.rng + p.target.r){
+          if (p.atkCd <= 0){
+            p.atkCd = 1 / curAtkSpd;
+            projs.push({type:'aa', team:'blue', owner:p, x:p.x, y:p.y, vx:Math.cos(a)*17, vy:Math.sin(a)*17, ang:a, r:5, dmg:p.ad, life:30, col:'#ffeaa7', pierce:false, homing:p.target});
+          }
+        } else {
+          p.x += Math.cos(a) * spd; p.y += Math.sin(a) * spd;
+        }
       }
     } else {
       p.target = null;
@@ -427,63 +570,92 @@ function update(){
     }
   }
 
-  // 적 AI 챔피언
-  if (ai.respawn > 0){
-    ai.respawn -= dt;
-    if (ai.respawn <= 0){ ai.x = wells[1].x - 50; ai.y = LANE_Y; ai.hp = ai.mhp; }
-  } else {
-    if (ai.atkCd > 0) ai.atkCd -= dt;
-    if (ai.qCd > 0) ai.qCd -= dt;
-    const blueTower = structs.find(s => s.team === 'blue' && s.type === 'tower' && s.hp > 0);
-    const redMinionsInTower = blueTower ? minions.some(m => m.team === 'red' && Math.hypot(m.x - blueTower.x, m.y - blueTower.y) < blueTower.rng) : true;
-    const safeMinX = (blueTower && !redMinionsInTower) ? blueTower.x + blueTower.rng + 50 : 300;
-    const redMins = minions.filter(m => m.team === 'red');
-    const frontMinionX = redMins.length > 0 ? Math.min(...redMins.map(m => m.x)) : 2350;
-
-    const playerLowHp = (p.respawn <= 0 && p.hp / p.mhp <= 0.45);
-    const ens = [...(p.respawn <= 0 ? [p] : []), ...minions.filter(m => m.team === 'blue'), ...structs.filter(s => s.team === 'blue' && s.hp > 0)];
-    let target = playerLowHp && Math.hypot(p.x - ai.x, p.y - ai.y) < 650
-      ? p
-      : ens.filter(e => Math.hypot(e.x - ai.x, e.y - ai.y) < 520).sort((a,b) => Math.hypot(a.x - ai.x, a.y - ai.y) - Math.hypot(b.x - ai.x, b.y - ai.y))[0];
-
-    let desiredX = ai.x, desiredY = LANE_Y;
-    if (ai.hp / ai.mhp < 0.25){
-      desiredX = wells[1].x;
-    } else if (target){
-      const d = Math.hypot(target.x - ai.x, target.y - ai.y);
-      const a = Math.atan2(target.y - ai.y, target.x - ai.x);
-      ai.facing = a;
-      if (d < 460 && ai.qCd <= 0){
-        ai.qCd = 4.5;
-        projs.push({type:'arrow', team:'red', owner:ai, x:ai.x, y:ai.y, vx:Math.cos(a)*14, vy:Math.sin(a)*14, ang:a, r:9, dmg:ai.ad*1.2 + 35, life:45, col:'#ff4757', pierce:false});
+  // 5대5 AI 챔피언 행동 (탑 1, 미드 1, 바텀 2, 정글 1 역할별 라인전)
+  aiChamps.forEach((bot, bIdx) => {
+    if (bot.respawn > 0){
+      bot.respawn -= dt;
+      if (bot.respawn <= 0){
+        const w = bot.team === 'blue' ? wells[0] : wells[1];
+        bot.x = w.x + (bot.team==='blue'?70:-70);
+        bot.y = w.y + (bot.team==='blue'?-70:70);
+        bot.hp = bot.mhp;
       }
-      if (d <= ai.rng + target.r){
-        if (ai.atkCd <= 0){
-          ai.atkCd = 1.15;
-          projs.push({type:'aa', team:'red', owner:ai, x:ai.x, y:ai.y, vx:Math.cos(a)*15, vy:Math.sin(a)*15, ang:a, r:5, dmg:ai.ad, life:30, col:'#ff7675', pierce:false, homing:target});
-        }
-        desiredX = playerLowHp ? target.x + 150 : Math.max(frontMinionX + 95, target.x + 215);
-      } else {
-        desiredX = playerLowHp ? target.x + 180 : Math.max(frontMinionX + 85, target.x + 225);
-      }
-      desiredY = target.y;
+      return;
+    }
+    if (bot.atkCd > 0) bot.atkCd -= dt;
+    if (bot.qCd > 0) bot.qCd -= dt;
+
+    const enemyTeam = bot.team === 'blue' ? 'red' : 'blue';
+    const enemyChamps = getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0);
+    const enemyMins = minions.filter(m => m.team === enemyTeam);
+    const enemyStructs = structs.filter(s => s.team === enemyTeam && s.hp > 0 && !isStructInvulnerable(s));
+    const enemies = [...enemyChamps, ...enemyMins, ...enemyStructs];
+
+    // 포탑 사거리 내 아군 미니언 없이 무리하게 진입 방지
+    const nearbyEnemyTower = structs.find(s => s.team === enemyTeam && s.type === 'tower' && s.hp > 0 && Math.hypot(s.x - bot.x, s.y - bot.y) < s.rng + 55);
+    const allyMinsNearTower = nearbyEnemyTower ? minions.some(m => m.team === bot.team && Math.hypot(m.x - nearbyEnemyTower.x, m.y - nearbyEnemyTower.y) < nearbyEnemyTower.rng) : true;
+
+    let goalX = bot.x, goalY = bot.y;
+    if (bot.hp / bot.mhp < 0.25){
+      const w = bot.team === 'blue' ? wells[0] : wells[1];
+      goalX = w.x; goalY = w.y;
+    } else if (nearbyEnemyTower && !allyMinsNearTower){
+      const awayA = Math.atan2(bot.y - nearbyEnemyTower.y, bot.x - nearbyEnemyTower.x);
+      goalX = bot.x + Math.cos(awayA) * 120;
+      goalY = bot.y + Math.sin(awayA) * 120;
     } else {
-      desiredX = Math.max(frontMinionX + 115, 1550);
+      const target = enemies.filter(e => Math.hypot(e.x - bot.x, e.y - bot.y) < 480)
+        .sort((a,b) => Math.hypot(a.x - bot.x, a.y - bot.y) - Math.hypot(b.x - bot.x, b.y - bot.y))[0];
+
+      if (target){
+        const d = Math.hypot(target.x - bot.x, target.y - bot.y);
+        const a = Math.atan2(target.y - bot.y, target.x - bot.x);
+        bot.facing = a;
+        if (d < 440 && bot.qCd <= 0){
+          bot.qCd = 5.0;
+          projs.push({type:'arrow', team:bot.team, owner:bot, x:bot.x, y:bot.y, vx:Math.cos(a)*14, vy:Math.sin(a)*14, ang:a, r:8, dmg:bot.ad*1.15 + 30, life:42, col:bot.team==='blue'?'#00d2ff':'#ff4757', pierce:false});
+        }
+        if (d <= bot.rng + target.r){
+          if (bot.atkCd <= 0){
+            bot.atkCd = 1.15;
+            projs.push({type:'aa', team:bot.team, owner:bot, x:bot.x, y:bot.y, vx:Math.cos(a)*15, vy:Math.sin(a)*15, ang:a, r:5, dmg:bot.ad, life:30, col:bot.team==='blue'?'#74b9ff':'#ff7675', pierce:false, homing:target});
+          }
+          goalX = bot.x; goalY = bot.y;
+        } else {
+          goalX = target.x; goalY = target.y;
+        }
+      } else {
+        // 배정된 라인(탑/미드/바텀/정글) 중앙 교전지점으로 이동
+        if (bot.role === 'top'){ goalX = 420; goalY = 420; }
+        else if (bot.role === 'mid'){ goalX = 1500; goalY = 1500; }
+        else if (bot.role === 'bot'){ goalX = 2580; goalY = 2580; }
+        else {
+          const spot = JUNGLE_SPOTS[(Math.floor(Date.now()/8000) + bIdx) % JUNGLE_SPOTS.length];
+          goalX = spot.x; goalY = spot.y;
+        }
+      }
     }
 
-    desiredX = Math.max(safeMinX, Math.min(MAP_W - 80, desiredX));
-    const mdx = desiredX - ai.x, mdy = desiredY - ai.y, mdist = Math.hypot(mdx, mdy);
-    const aiSpd = ai.ms / 60;
-    if (mdist > aiSpd){ ai.x += (mdx / mdist) * aiSpd; ai.y += (mdy / mdist) * aiSpd; }
-  }
+    const dx = goalX - bot.x, dy = goalY - bot.y, dist = Math.hypot(dx, dy);
+    const bSpd = bot.ms / 60;
+    if (dist > bSpd){
+      bot.facing = Math.atan2(dy, dx);
+      bot.x = Math.max(60, Math.min(MAP_S - 60, bot.x + (dx / dist) * bSpd));
+      bot.y = Math.max(60, Math.min(MAP_S - 60, bot.y + (dy / dist) * bSpd));
+    }
+  });
 
-  // 미니언 AI + 서로 겹치지 않게 밀어내는 Separation(분리) 물리 적용
+  // 3라인 미니언 AI (탑, 미드, 바텀 경로 추적 + 겹침 방지 Separation)
   minions.forEach((m, idx) => {
     if (m.cd > 0) m.cd -= dt;
-    const ens = m.team === 'blue'
-      ? [...(ai.respawn <= 0 ? [ai] : []), ...minions.filter(x => x.team === 'red'), ...structs.filter(s => s.team === 'red' && s.hp > 0)]
-      : [...(p.respawn <= 0 ? [p] : []), ...minions.filter(x => x.team === 'blue'), ...structs.filter(s => s.team === 'blue' && s.hp > 0)];
-    const near = ens.filter(e => Math.hypot(e.x - m.x, e.y - m.y) < 350).sort((a,b) => Math.hypot(a.x - m.x, a.y - m.y) - Math.hypot(b.x - m.x, b.y - m.y))[0];
+    const enemyTeam = m.team === 'blue' ? 'red' : 'blue';
+    const ens = [
+      ...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0),
+      ...minions.filter(x => x.team === enemyTeam),
+      ...structs.filter(s => s.team === enemyTeam && s.hp > 0 && !isStructInvulnerable(s))
+    ];
+    const near = ens.filter(e => Math.hypot(e.x - m.x, e.y - m.y) < 310)
+      .sort((a,b) => Math.hypot(a.x - m.x, a.y - m.y) - Math.hypot(b.x - m.x, b.y - m.y))[0];
 
     let vx = 0, vy = 0;
     if (near){
@@ -491,46 +663,51 @@ function update(){
       if (d <= m.rng + near.r){
         if (m.cd <= 0){
           m.cd = 1.25; near.hp -= m.ad;
-          addFloat(near.x, near.y - 20, `-${m.ad}`, "#dfe6e9", true);
-          if (near === p){ p.recall = 0; if (p.hp <= 0){ p.d++; p.respawn = 5; addFloat(p.x, p.y, "처치당했습니다!", "#e74c3c"); } }
+          if (near === p){
+            p.recall = 0;
+            addFloat(p.x, p.y - 22, `-${m.ad}`, "#dfe6e9", true);
+            if (p.hp <= 0){ p.d++; teamKills.red++; p.respawn = 6; addFloat(p.x, p.y, "처치당했습니다!", "#e74c3c"); }
+          } else if (near.respawn !== undefined && near.hp <= 0){
+            near.respawn = 7;
+            teamKills[m.team]++;
+          }
         }
       } else { vx += Math.cos(a) * m.spd; vy += Math.sin(a) * m.spd; }
     } else {
-      const targetX = m.team === 'blue' ? 2820 : 380;
-      const a = Math.atan2(LANE_Y - m.y, targetX - m.x);
+      const wp = m.path[m.wpIdx] || m.path[m.path.length - 1];
+      const d = Math.hypot(wp.x - m.x, wp.y - m.y);
+      if (d < 65 && m.wpIdx < m.path.length - 1) m.wpIdx++;
+      const a = Math.atan2(wp.y - m.y, wp.x - m.x);
       vx += Math.cos(a) * m.spd; vy += Math.sin(a) * m.spd;
     }
 
-    // 미니언 간 겹침 방지(Separation) 반발력
-    minions.forEach((other, oIdx) => {
-      if (idx === oIdx) return;
-      const dx = m.x - other.x, dy = m.y - other.y;
-      const dist = Math.hypot(dx, dy);
-      const minDist = m.r + other.r + 12; // 최소 간격 유지
-      if (dist > 0 && dist < minDist){
-        const push = (minDist - dist) / minDist * 1.4;
+    // 미니언 간 겹침 방지
+    for (let j = 0; j < minions.length; j++){
+      if (idx === j) continue;
+      const o = minions[j];
+      const dx = m.x - o.x, dy = m.y - o.y, dist = Math.hypot(dx, dy);
+      const minD = m.r + o.r + 10;
+      if (dist > 0 && dist < minD){
+        const push = (minD - dist) / minD * 1.35;
         vx += (dx / dist) * push;
         vy += (dy / dist) * push;
       }
-    });
-
-    m.x += vx;
-    m.y = Math.max(LANE_Y - 140, Math.min(LANE_Y + 140, m.y + vy));
+    }
+    m.x += vx; m.y += vy;
   });
 
-  // 포탑 타겟팅 (빨간 조준 레이저 선 + 포탑 탄환 발사)
+  // 포탑 공격
   structs.forEach(s => {
     if (s.hp <= 0 || s.type !== 'tower'){ s.target = null; return; }
     if (s.cd > 0) s.cd -= dt;
-    const ens = s.team === 'blue'
-      ? [...minions.filter(m => m.team === 'red'), ...(ai.respawn <= 0 ? [ai] : [])]
-      : [...minions.filter(m => m.team === 'blue'), ...(p.respawn <= 0 ? [p] : [])];
-
-    // 기존 타겟이 사거리 안에 살아있으면 유지
+    const enemyTeam = s.team === 'blue' ? 'red' : 'blue';
+    const ens = [
+      ...minions.filter(m => m.team === enemyTeam),
+      ...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0)
+    ];
     if (!s.target || s.target.hp <= 0 || (s.target.respawn && s.target.respawn > 0) || Math.hypot(s.target.x - s.x, s.target.y - s.y) > s.rng + s.target.r){
       s.target = ens.find(e => Math.hypot(e.x - s.x, e.y - s.y) <= s.rng + e.r) || null;
     }
-
     if (s.target && s.cd <= 0){
       s.cd = 1.35;
       const a = Math.atan2(s.target.y - s.y, s.target.x - s.x);
@@ -538,39 +715,44 @@ function update(){
     }
   });
 
-  // 투사체 업데이트 & 입자 이펙트
+  // 투사체 판정
   for (let i = projs.length - 1; i >= 0; i--){
     const pr = projs[i];
     if (pr.homing && pr.homing.hp > 0){
       const a = Math.atan2(pr.homing.y - pr.y, pr.homing.x - pr.x);
-      pr.ang = a;
-      pr.vx = Math.cos(a) * 16; pr.vy = Math.sin(a) * 16;
+      pr.ang = a; pr.vx = Math.cos(a) * 16; pr.vy = Math.sin(a) * 16;
     }
     pr.x += pr.vx; pr.y += pr.vy; pr.life--;
 
-    // Q 파란 화살 잔상 입자
     if (pr.type === 'arrow' || pr.type === 'ult'){
-      particles.push({x:pr.x, y:pr.y, r:pr.r*0.5, col:pr.col, a:0.7});
+      particles.push({x:pr.x, y:pr.y, r:pr.r*0.5, col:pr.col, a:0.65});
     }
 
-    const ens = pr.team === 'blue'
-      ? [...(ai.respawn <= 0 ? [ai] : []), ...minions.filter(m => m.team === 'red'), ...structs.filter(s => s.team === 'red' && s.hp > 0)]
-      : [...(p.respawn <= 0 ? [p] : []), ...minions.filter(m => m.team === 'blue'), ...structs.filter(s => s.team === 'blue' && s.hp > 0)];
+    const enemyTeam = pr.team === 'blue' ? 'red' : 'blue';
+    const ens = [
+      ...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0),
+      ...minions.filter(m => m.team === enemyTeam),
+      ...structs.filter(s => s.team === enemyTeam && s.hp > 0 && !isStructInvulnerable(s))
+    ];
 
     for (let en of ens){
       if (Math.hypot(pr.x - en.x, pr.y - en.y) <= pr.r + en.r){
         const dmgVal = Math.round(pr.dmg);
         en.hp -= dmgVal;
-        addFloat(en.x, en.y - 24, `-${dmgVal}`, pr.team === 'blue' ? '#ffeaa7' : '#ff7675', true);
+        if (Math.hypot(en.x - (cam.x + c.width/2), en.y - (cam.y + c.height/2)) < 900){
+          addFloat(en.x, en.y - 24, `-${dmgVal}`, pr.team === 'blue' ? '#ffeaa7' : '#ff7675', true);
+        }
 
         if (en === p){
           p.recall = 0;
-          if (p.hp <= 0){ p.d++; p.respawn = 5; addFloat(p.x, p.y, "처치당했습니다!", "#e74c3c"); }
-        } else if (en === ai && ai.hp <= 0){
-          ai.respawn = 7;
-          if (pr.owner === p){ p.k++; p.gold += 300; gainXp(130); addFloat(ai.x, ai.y - 35, "적 챔피언 처치! +300G", "#f1c40f"); }
+          if (p.hp <= 0){ p.d++; teamKills.red++; p.respawn = 6; addFloat(p.x, p.y, "처치당했습니다!", "#e74c3c"); }
+        } else if (en.respawn !== undefined && en.hp <= 0){
+          en.respawn = 7;
+          teamKills[pr.team]++;
+          if (pr.owner === p){ p.k++; p.gold += 300; gainXp(130); addFloat(en.x, en.y - 35, `${en.name} 처치! +300G`, "#f1c40f"); }
         } else if (en.hp <= 0 && pr.owner === p){
           if (en.type === 'tower'){ p.gold += 250; gainXp(110); addFloat(en.x, en.y - 35, "포탑 파괴! +250G", "#f1c40f"); }
+          else if (en.type === 'inhib'){ p.gold += 300; gainXp(140); addFloat(en.x, en.y - 35, "억제기 파괴! +300G", "#f1c40f"); }
           else if (!en.type){ p.cs++; p.gold += 20; gainXp(35); addFloat(en.x, en.y - 30, "+20G", "#f1c40f"); }
         }
         if (!pr.pierce){ pr.life = 0; break; }
@@ -581,25 +763,27 @@ function update(){
   minions = minions.filter(m => m.hp > 0);
 
   // 넥서스 파괴 승패
-  const bn = structs.find(s => s.team === 'blue' && s.type === 'nexus');
-  const rn = structs.find(s => s.team === 'red' && s.type === 'nexus');
-  if (rn.hp <= 0){ over = true; document.getElementById('endt').innerText = "승리! (적 넥서스 파괴)"; document.getElementById('end').style.display = 'flex'; }
+  const bn = structs.find(s => s.id === 'b_nex');
+  const rn = structs.find(s => s.id === 'r_nex');
+  if (rn.hp <= 0){ over = true; document.getElementById('endt').innerText = "승리! (적군 넥서스 파괴)"; document.getElementById('end').style.display = 'flex'; }
   if (bn.hp <= 0){ over = true; document.getElementById('endt').innerText = "패배! (아군 넥서스 파괴)"; document.getElementById('end').style.display = 'flex'; }
 
-  // 카메라 제어 (고정 모드 vs 자유 모드 엣지 스크롤)
+  // 카메라 이동
   if (cam.lock){
-    cam.x = Math.max(0, Math.min(MAP_W - c.width, p.x - c.width / 2));
-    cam.y = Math.max(0, Math.min(MAP_H - c.height, p.y - c.height / 2));
+    cam.x = Math.max(0, Math.min(MAP_S - c.width, p.x - c.width / 2));
+    cam.y = Math.max(0, Math.min(MAP_S - c.height, p.y - c.height / 2));
   } else {
-    const edge = 35, camSpd = 16;
+    const edge = 35, camSpd = 18;
     if (mouse.x <= edge) cam.x = Math.max(0, cam.x - camSpd);
-    if (mouse.x >= c.width - edge) cam.x = Math.min(MAP_W - c.width, cam.x + camSpd);
+    if (mouse.x >= c.width - edge) cam.x = Math.min(MAP_S - c.width, cam.x + camSpd);
     if (mouse.y <= edge) cam.y = Math.max(0, cam.y - camSpd);
-    if (mouse.y >= c.height - edge) cam.y = Math.min(MAP_H - c.height, cam.y + camSpd);
+    if (mouse.y >= c.height - edge) cam.y = Math.min(MAP_S - c.height, cam.y + camSpd);
   }
   mouse.wx = mouse.x + cam.x; mouse.wy = mouse.y + cam.y;
 
-  // HUD 숫자 업데이트
+  // HUD 숫자 갱신
+  document.getElementById('tk-blue').innerText = teamKills.blue;
+  document.getElementById('tk-red').innerText = teamKills.red;
   document.getElementById('kd').innerText = `${p.k} / ${p.d}`;
   document.getElementById('cs').innerText = p.cs;
   document.getElementById('gold').innerText = Math.floor(p.gold);
@@ -614,154 +798,193 @@ function update(){
   document.getElementById('mpt').innerText = `${Math.ceil(p.mp)} / ${p.mmp}`;
 }
 
+function drawRoads(targetCtx, scale, roadW){
+  targetCtx.lineCap = 'round';
+  targetCtx.lineJoin = 'round';
+  // 강(River: 북서 0,0 -> 남동 3000,3000 대각선)
+  targetCtx.strokeStyle = '#1b4f72';
+  targetCtx.lineWidth = roadW * 0.9;
+  targetCtx.beginPath();
+  targetCtx.moveTo(0, 0);
+  targetCtx.lineTo(MAP_S * scale, MAP_S * scale);
+  targetCtx.stroke();
+
+  // 탑, 미드, 바텀 3라인 도로
+  targetCtx.strokeStyle = '#343d46';
+  targetCtx.lineWidth = roadW;
+  ['top', 'mid', 'bot'].forEach(lane => {
+    const pts = LANE_PATHS[lane];
+    targetCtx.beginPath();
+    targetCtx.moveTo(pts[0].x * scale, pts[0].y * scale);
+    for (let i = 1; i < pts.length; i++) targetCtx.lineTo(pts[i].x * scale, pts[i].y * scale);
+    targetCtx.stroke();
+  });
+
+  // 양쪽 기지 광장
+  targetCtx.fillStyle = '#2c353d';
+  targetCtx.beginPath(); targetCtx.arc(360 * scale, 2640 * scale, roadW * 1.15, 0, Math.PI * 2); targetCtx.fill();
+  targetCtx.beginPath(); targetCtx.arc(2640 * scale, 360 * scale, roadW * 1.15, 0, Math.PI * 2); targetCtx.fill();
+}
+
 function drawMinimap(){
   mctx.clearRect(0, 0, mc.width, mc.height);
-  const sx = mc.width / MAP_W, sy = mc.height / MAP_H;
-  mctx.fillStyle = '#2c3e50';
-  mctx.fillRect(0, LANE_Y * sy - 10, mc.width, 20);
+  const s = mc.width / MAP_S;
 
-  structs.forEach(s => {
-    if (s.hp <= 0) return;
-    mctx.fillStyle = s.team === 'blue' ? '#3498db' : '#e74c3c';
-    mctx.beginPath(); mctx.arc(s.x * sx, s.y * sy, s.type === 'nexus' ? 5 : 3.5, 0, Math.PI * 2); mctx.fill();
+  // 어두운 초록 정글 배경
+  mctx.fillStyle = '#0f241c';
+  mctx.fillRect(0, 0, mc.width, mc.height);
+
+  // 강 & 3개 라인 그리기
+  drawRoads(mctx, s, 14);
+
+  // 모든 포탑/억제기/넥서스
+  structs.forEach(st => {
+    if (st.hp <= 0) return;
+    mctx.fillStyle = st.team === 'blue' ? '#3498db' : '#e74c3c';
+    mctx.beginPath();
+    mctx.arc(st.x * s, st.y * s, st.type === 'nexus' ? 4.5 : 2.8, 0, Math.PI * 2);
+    mctx.fill();
   });
+
+  // 미니언 실시간 위치
   minions.forEach(m => {
-    mctx.fillStyle = m.team === 'blue' ? '#74b9ff' : '#ff7675';
-    mctx.fillRect(m.x * sx - 1.5, m.y * sy - 1.5, 3, 3);
+    mctx.fillStyle = m.team === 'blue' ? '#81ecec' : '#fab1a0';
+    mctx.fillRect(m.x * s - 1, m.y * s - 1, 2, 2);
   });
-  if (ai.respawn <= 0){
-    mctx.fillStyle = '#ff0000';
-    mctx.beginPath(); mctx.arc(ai.x * sx, ai.y * sy, 4, 0, Math.PI * 2); mctx.fill();
-  }
-  if (p.respawn <= 0){
-    mctx.fillStyle = '#2ecc71';
-    mctx.beginPath(); mctx.arc(p.x * sx, p.y * sy, 4.5, 0, Math.PI * 2); mctx.fill();
-  }
+
+  // 아군 5명(파란 점) & 적군 5명(빨간 점)
+  getAllChampions().forEach(ch => {
+    if (ch.respawn > 0) return;
+    mctx.fillStyle = ch.isPlayer ? '#2ecc71' : (ch.team === 'blue' ? '#0984e3' : '#ff0000');
+    mctx.beginPath();
+    mctx.arc(ch.x * s, ch.y * s, ch.isPlayer ? 4.2 : 3.5, 0, Math.PI * 2);
+    mctx.fill();
+    if (ch.isPlayer){
+      mctx.strokeStyle = '#fff'; mctx.lineWidth = 1; mctx.stroke();
+    }
+  });
+
+  // 현재 카메라 뷰포트 박스
   mctx.strokeStyle = '#ffffff';
-  mctx.lineWidth = 1;
-  mctx.strokeRect(cam.x * sx, cam.y * sy, c.width * sx, c.height * sy);
+  mctx.lineWidth = 1.2;
+  mctx.strokeRect(cam.x * s, cam.y * s, c.width * s, c.height * s);
 }
 
 function draw(){
   ctx.clearRect(0, 0, c.width, c.height);
   ctx.save(); ctx.translate(-cam.x, -cam.y);
 
-  // 1. 주변 풀밭(잔디 타일 패턴) 배경
-  ctx.fillStyle = '#12261e';
-  ctx.fillRect(0, 0, MAP_W, MAP_H);
-  ctx.fillStyle = '#163026';
-  for (let gx = 0; gx < MAP_W; gx += 80){
-    for (let gy = 0; gy < MAP_H; gy += 80){
-      if ((gx + gy) % 160 === 0) ctx.fillRect(gx, gy, 80, 80);
+  // 1. 어두운 초록 정글 배경
+  ctx.fillStyle = '#0f241c';
+  ctx.fillRect(0, 0, MAP_S, MAP_S);
+  ctx.fillStyle = '#132d23';
+  for (let gx = 0; gx < MAP_S; gx += 120){
+    for (let gy = 0; gy < MAP_S; gy += 120){
+      if ((gx + gy) % 240 === 0) ctx.fillRect(gx, gy, 120, 120);
     }
   }
 
-  // 2. 공격로 돌길 패턴
-  const roadTop = LANE_Y - 175, roadH = 350;
-  ctx.fillStyle = '#252d36';
-  ctx.fillRect(0, roadTop, MAP_W, roadH);
-  // 돌길 타일 & 중앙선 장식
-  ctx.strokeStyle = 'rgba(200, 170, 110, 0.14)';
-  ctx.lineWidth = 2;
-  for (let rx = 0; rx < MAP_W; rx += 100){
-    ctx.strokeRect(rx, roadTop, 100, roadH / 2);
-    ctx.strokeRect(rx + 50, roadTop + roadH / 2, 100, roadH / 2);
-  }
-  ctx.strokeStyle = '#c8aa6e';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(0, roadTop, MAP_W, roadH);
+  // 2. 강(River) & 탑/미드/바텀 3라인 공격로
+  drawRoads(ctx, 1, 240);
 
-  // 3. 우물(회복 구역)
+  // 3. 우물 (남서쪽 아군 우물 / 북동쪽 적군 우물)
   wells.forEach(w => {
-    const grad = ctx.createRadialGradient(w.x, w.y, 10, w.x, w.y, w.r);
-    grad.addColorStop(0, w.team === 'blue' ? 'rgba(52,152,219,0.45)' : 'rgba(231,76,60,0.45)');
+    const grad = ctx.createRadialGradient(w.x, w.y, 15, w.x, w.y, w.r);
+    grad.addColorStop(0, w.team === 'blue' ? 'rgba(52,152,219,0.5)' : 'rgba(231,76,60,0.5)');
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.arc(w.x, w.y, w.r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = w.team === 'blue' ? '#3498db' : '#e74c3c'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(w.team === 'blue' ? '아군 우물 (P:상점)' : '적군 우물', w.x - 42, w.y + 4);
+    ctx.strokeStyle = w.team === 'blue' ? '#3498db' : '#e74c3c'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText(w.team === 'blue' ? '아군 우물 (P:상점)' : '적군 우물', w.x - 48, w.y + 4);
   });
 
-  // 우클릭 이동/공격 마커
+  // 우클릭 마커
   marks.forEach((m, i) => {
     ctx.strokeStyle = m.col; ctx.globalAlpha = m.a; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(m.x, m.y, 18 * (1.4 - m.a), 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1; m.a -= 0.04; if (m.a <= 0) marks.splice(i, 1);
   });
 
-  // 4. 넥서스 & 포탑 + 포탑 빨간 조준 레이저 선
+  // 4. 구조물 (포탑 / 억제기 / 넥서스 + 무적 방패 표시 + 조준 레이저)
   structs.forEach(s => {
     if (s.hp <= 0) return;
+    const invuln = isStructInvulnerable(s);
     if (s.type === 'tower'){
-      ctx.strokeStyle = s.team === 'blue' ? 'rgba(52,152,219,0.2)' : 'rgba(231,76,60,0.2)';
+      ctx.strokeStyle = s.team === 'blue' ? 'rgba(52,152,219,0.18)' : 'rgba(231,76,60,0.18)';
       ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(s.x, s.y, s.rng, 0, Math.PI * 2); ctx.stroke();
 
-      // 포탑 조준 레이저 선
       if (s.target && s.target.hp > 0){
         ctx.save();
         ctx.strokeStyle = s.team === 'blue' ? 'rgba(0, 210, 255, 0.75)' : 'rgba(255, 56, 56, 0.85)';
-        ctx.lineWidth = 2.5;
-        ctx.setLineDash([8, 4]);
+        ctx.lineWidth = 2.5; ctx.setLineDash([8, 4]);
         ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.target.x, s.target.y); ctx.stroke();
         ctx.restore();
       }
     }
     ctx.fillStyle = s.team === 'blue' ? '#1e3799' : '#b33939';
     ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#c8aa6e'; ctx.lineWidth = 3.5; ctx.stroke();
+    ctx.strokeStyle = invuln ? '#95a5a6' : '#c8aa6e';
+    ctx.lineWidth = invuln ? 2 : 3.5; ctx.stroke();
+
+    const label = s.type === 'nexus' ? '넥서스' : (s.type === 'inhib' ? '억제기' : `${s.tier}차 포탑`);
     ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif';
-    ctx.fillText(s.type === 'nexus' ? '넥서스' : '포탑', s.x - 16, s.y + 4);
+    ctx.fillText(label, s.x - 20, s.y + 4);
+    if (invuln){
+      ctx.fillStyle = '#bdc3c7'; ctx.font = '10px sans-serif';
+      ctx.fillText('🛡️무적', s.x - 16, s.y + 17);
+    }
+
     ctx.fillStyle = '#000'; ctx.fillRect(s.x - 32, s.y - s.r - 14, 64, 7);
-    ctx.fillStyle = '#2ecc71'; ctx.fillRect(s.x - 32, s.y - s.r - 14, 64 * (s.hp / s.mhp), 7);
+    ctx.fillStyle = invuln ? '#7f8c8d' : '#2ecc71';
+    ctx.fillRect(s.x - 32, s.y - s.r - 14, 64 * (s.hp / s.mhp), 7);
   });
 
-  // 5. 미니언 (방패/망토 디테일)
+  // 5. 미니언
   minions.forEach(m => {
     ctx.fillStyle = m.team === 'blue' ? '#2980b9' : '#c0392b';
     ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = m.team === 'blue' ? '#74b9ff' : '#ff7675'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#000'; ctx.fillRect(m.x - 14, m.y - 20, 28, 4);
-    ctx.fillStyle = '#2ecc71'; ctx.fillRect(m.x - 14, m.y - 20, 28 * (m.hp / m.mhp), 4);
+    ctx.strokeStyle = m.team === 'blue' ? '#74b9ff' : '#ff7675'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#000'; ctx.fillRect(m.x - 13, m.y - 19, 26, 4);
+    ctx.fillStyle = '#2ecc71'; ctx.fillRect(m.x - 13, m.y - 19, 26 * (m.hp / m.mhp), 4);
   });
 
-  // 6. 적 AI 챔피언 (방향 표시기 포함)
-  if (ai.respawn <= 0){
-    ctx.save(); ctx.translate(ai.x, ai.y); ctx.rotate(ai.facing);
-    ctx.fillStyle = '#eb2f06';
-    ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(10, -8); ctx.lineTo(10, 8); ctx.closePath(); ctx.fill();
-    ctx.restore();
+  // 6. 5대5 챔피언 전체 렌더링 (이름표 + 체력바 + 방향 표시기)
+  getAllChampions().forEach(ch => {
+    if (ch.respawn > 0) return;
 
-    ctx.fillStyle = '#c23616'; ctx.beginPath(); ctx.arc(ai.x, ai.y, ai.r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#ffcccc'; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.fillText('적 AI', ai.x - 14, ai.y + 4);
-    ctx.fillStyle = '#000'; ctx.fillRect(ai.x - 26, ai.y - 32, 52, 6);
-    ctx.fillStyle = '#e74c3c'; ctx.fillRect(ai.x - 26, ai.y - 32, 52 * (ai.hp / ai.mhp), 6);
-  }
-
-  // 7. 플레이어 챔피언 + A키 공격 사거리 표시
-  if (p.respawn <= 0){
-    if (showRange){
+    if (ch.isPlayer && showRange){
       ctx.fillStyle = 'rgba(52, 152, 219, 0.1)';
       ctx.strokeStyle = 'rgba(52, 152, 219, 0.7)';
       ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.rng, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.rng, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     }
-    // 방향 표시기
-    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.facing);
-    ctx.fillStyle = '#f1c40f';
-    ctx.beginPath(); ctx.moveTo(27, 0); ctx.lineTo(10, -8); ctx.lineTo(10, 8); ctx.closePath(); ctx.fill();
+
+    // 방향 화살표
+    ctx.save(); ctx.translate(ch.x, ch.y); ctx.rotate(ch.facing || 0);
+    ctx.fillStyle = ch.isPlayer ? '#f1c40f' : (ch.team === 'blue' ? '#74b9ff' : '#ff7675');
+    ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(10, -7); ctx.lineTo(10, 7); ctx.closePath(); ctx.fill();
     ctx.restore();
 
-    ctx.fillStyle = '#0984e3'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.fillText('나', p.x - 6, p.y + 4);
-    ctx.fillStyle = '#000'; ctx.fillRect(p.x - 26, p.y - 32, 52, 6);
-    ctx.fillStyle = '#2ecc71'; ctx.fillRect(p.x - 26, p.y - 32, 52 * (p.hp / p.mhp), 6);
-  }
+    // 챔피언 원형 본체
+    ctx.fillStyle = ch.isPlayer ? '#0984e3' : (ch.team === 'blue' ? '#2980b9' : '#c23616');
+    ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = ch.isPlayer ? '#f1c40f' : (ch.team === 'blue' ? '#81ecec' : '#ffcccc');
+    ctx.lineWidth = ch.isPlayer ? 3 : 2; ctx.stroke();
 
-  // 잔상 입자 이펙트
+    // 머리 위 이름표 및 체력바
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(ch.name, ch.x, ch.y - 36);
+    ctx.textAlign = 'left';
+
+    ctx.fillStyle = '#000'; ctx.fillRect(ch.x - 28, ch.y - 31, 56, 6);
+    ctx.fillStyle = ch.team === 'blue' ? '#2ecc71' : '#e74c3c';
+    ctx.fillRect(ch.x - 28, ch.y - 31, 56 * (ch.hp / ch.mhp), 6);
+  });
+
+  // 잔상 입자
   particles.forEach((pt, i) => {
     ctx.fillStyle = pt.col; ctx.globalAlpha = pt.a;
     ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2); ctx.fill();
@@ -769,34 +992,27 @@ function draw(){
     if (pt.a <= 0) particles.splice(i, 1);
   });
 
-  // 8. 투사체 렌더링 (빛나는 파란 화살 / 포탑 탄환 / 평타)
+  // 투사체
   projs.forEach(pr => {
-    ctx.save();
-    ctx.translate(pr.x, pr.y);
-    ctx.rotate(pr.ang || 0);
+    ctx.save(); ctx.translate(pr.x, pr.y); ctx.rotate(pr.ang || 0);
     if (pr.type === 'arrow'){
+      ctx.shadowColor = pr.col; ctx.shadowBlur = 12;
+      ctx.fillStyle = pr.col;
+      ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-9, -6); ctx.lineTo(-4, 0); ctx.lineTo(-9, 6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillRect(-13, -1.5, 24, 3);
+    } else if (pr.type === 'tower_shot'){
       ctx.shadowColor = pr.col; ctx.shadowBlur = 14;
       ctx.fillStyle = pr.col;
-      ctx.beginPath();
-      ctx.moveTo(22, 0); ctx.lineTo(-10, -7); ctx.lineTo(-5, 0); ctx.lineTo(-10, 7);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-14, -2, 26, 4);
-    } else if (pr.type === 'tower_shot'){
-      ctx.shadowColor = pr.col; ctx.shadowBlur = 16;
-      ctx.fillStyle = pr.col;
       ctx.beginPath(); ctx.arc(0, 0, pr.r, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(0, 0, pr.r * 0.45, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, pr.r * 0.45, 0, Math.PI * 2); ctx.fill();
     } else {
-      ctx.shadowColor = pr.col; ctx.shadowBlur = 8;
       ctx.fillStyle = pr.col;
       ctx.beginPath(); ctx.arc(0, 0, pr.r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
   });
 
-  // 데미지 및 알림 텍스트
+  // 데미지 및 알림 플로팅 텍스트
   dmgTexts.forEach((t, i) => {
     ctx.fillStyle = t.color;
     ctx.font = t.isDmg ? 'bold 14px sans-serif' : 'bold 13px sans-serif';
