@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>Mini LoL - 소환사의 협곡 5v5 (정통 라인전 패치)</title>
+<title>Mini LoL - 소환사의 협곡 5v5 (정통 라인전 + 정밀 패치)</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;user-select:none}
   html,body{width:100%;height:100%;overflow:hidden;background:#0a1428;font-family:'Malgun Gothic',sans-serif;color:#f0e6d2}
@@ -42,7 +42,7 @@
   /* 스킬 툴팁 */
   #tooltip{
     display:none;position:fixed;bottom:145px;left:50%;transform:translateX(-50%);
-    width:360px;background:rgba(1,10,19,.97);border:1.5px solid #c8aa6e;border-radius:8px;
+    width:380px;background:rgba(1,10,19,.97);border:1.5px solid #c8aa6e;border-radius:8px;
     padding:11px 14px;font-size:12px;line-height:1.5;z-index:90;pointer-events:none;
     box-shadow:0 4px 20px rgba(0,0,0,.95);
   }
@@ -57,7 +57,7 @@
     border:2px solid #c8aa6e;box-shadow:0 4px 24px rgba(0,0,0,.9);
     z-index:30;max-width:calc(100vw - 470px);
   }
-  #stats{font-size:11px;line-height:1.45;min-width:115px;border-right:1px solid #463714;padding-right:10px}
+  #stats{font-size:11px;line-height:1.45;min-width:125px;border-right:1px solid #463714;padding-right:10px}
   .skill-area{display:flex;flex-direction:column;align-items:center}
   .row{display:flex;gap:6px;align-items:flex-end}
   .skill-col{display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -103,7 +103,7 @@
   #cam-status{font-size:10px;color:#c8aa6e;text-align:center;margin-top:3px}
 
   /* 상점 창 */
-  #shop{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;background:rgba(1,10,19,.98);border:2px solid #c8aa6e;border-radius:10px;padding:18px;z-index:80;box-shadow:0 0 30px rgba(0,0,0,.95)}
+  #shop{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:540px;background:rgba(1,10,19,.98);border:2px solid #c8aa6e;border-radius:10px;padding:18px;z-index:80;box-shadow:0 0 30px rgba(0,0,0,.95)}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
   .item{background:#1e2328;border:1px solid #463714;padding:9px;border-radius:6px;cursor:pointer;transition:.12s}
   .item:hover{border-color:#c8aa6e;background:#282f37}
@@ -119,14 +119,14 @@
 <!-- 1. 게임 시작 전 챔피언 선택 화면 -->
 <div id="champ-select">
   <h1>소환사의 협곡 5v5 - 챔피언 선택</h1>
-  <p class="sub">정통 라인전 템포 패치 적용: 미니언 막타 파밍과 거리 조절을 통해 성장하세요.</p>
+  <p class="sub">실제 LoL 스킬 계수 + 포탑 스킬 면역 + 0.65x 와이드 시야 + 부드러운 AI 움직임 적용</p>
   <div class="champ-cards" id="champ-cards"></div>
   <button id="start-btn" onclick="startGame()">게임 시작</button>
 </div>
 
 <div id="guide">
   <b>[소환사의 협곡 5v5]</b> <b>우클릭</b>: 이동/공격 | <b>Ctrl+Q/W/E/R</b>: 스킬 레벨업 | <b>Space</b>: 카메라 고정/해제 | <b>A</b>: 사거리 | <b>S</b>: 정지<br>
-  <b>Q/W/E/R</b>: 챔피언 스킬 (마우스 오버 시 설명) | <b>D/F</b>: 유체화/점멸 | <b>4</b>: 와드(60초 시야) | <b>B</b>: 귀환 | <b>P</b>: 상점 | <b>1~6</b>: 물약
+  <b>Q/W/E/R</b>: 챔피언 스킬 | <b>D/F</b>: 유체화/점멸 | <b>4</b>: 와드 | <b>B</b>: 귀환 | <b>P</b>: 상점 | <b>1~6</b>: 물약 (구조물은 스킬 면역 / 평타만 피해)
 </div>
 
 <div id="top">
@@ -156,8 +156,8 @@
   <div id="stats">
     <div style="color:#c8aa6e;font-weight:bold" id="hud-cname">이즈리얼</div>
     <div>Lv.<b id="lv">1</b> (<span id="xp">0</span>%) | SP:<b id="sp" style="color:#f1c40f">1</b></div>
-    <div>공격력: <b id="ad">45</b> <span id="drake-tag" style="color:#e67e22;font-size:10px"></span></div>
-    <div>공격속도: <b id="as">1.05</b> | 이속: <b id="ms">200</b></div>
+    <div>AD: <b id="ad">45</b> | AP: <b id="ap">0</b> <span id="drake-tag" style="color:#e67e22;font-size:10px"></span></div>
+    <div>공속: <b id="as">1.05</b> | 이속: <b id="ms">200</b></div>
     <div id="baron-tag" style="color:#d980fa;font-size:10px;font-weight:bold"></div>
   </div>
   <div class="skill-area">
@@ -226,6 +226,9 @@ const miniFogCanvas = document.createElement('canvas');
 miniFogCanvas.width = 210; miniFogCanvas.height = 210;
 const mfctx = miniFogCanvas.getContext('2d');
 
+// [수정 3] 카메라 시야 줌 배율 (0.65)
+const CAM_ZOOM = 0.65;
+
 function resize(){
   c.width = innerWidth; c.height = innerHeight;
   fogCanvas.width = innerWidth; fogCanvas.height = innerHeight;
@@ -233,74 +236,81 @@ function resize(){
 resize();
 window.addEventListener('resize', resize);
 
-// [패치 1 & 2 적용] 대표 챔피언 5종 데이터
-// - 기본 이동 속도(ms): 기존 대비 약 60% 수준 (340->204, 345->207, 335->200, 330->198)
-// - 기본 체력(hp): 기존 대비 2배 상향 (750->1500, 690->1380, 610->1220, 620->1240, 760->1520)
-// - 기본 공격력(ad): 기존 대비 약 30% 하향 (68->48, 66->46, 58->41, 64->45, 65->46)
+// 스크린 좌표 <-> 월드 좌표 역산 헬퍼 (0.65 줌 반영)
+function screenToWorld(sx, sy){
+  return {
+    x: sx / CAM_ZOOM + cam.x,
+    y: sy / CAM_ZOOM + cam.y
+  };
+}
+function getViewW(){ return c.width / CAM_ZOOM; }
+function getViewH(){ return c.height / CAM_ZOOM; }
+
+// 챔피언 5종 데이터 (기본 AD + 추가 AD + AP 계수 및 방어/마저 체계 구축)
 const CHAMP_DEFS = {
   garen: {
     id:'garen', name:'가렌', role:'top', roleKr:'탑 / 근접 전사', ico:'🗡️', color:'#2980b9', stroke:'#74b9ff',
-    hp:1500, mp:300, ad:48, as:0.95, ms:204, rng:135,
+    hp:1500, mp:300, ad:66, bonusAd:0, ap:0, armor:38, mr:32, as:0.95, ms:204, rng:135,
     mcd:{q:8, w:15, e:9, r:55}, cdStep:{q:0.6, w:1.0, e:0.6, r:5.0},
     cost:{q:0, w:0, e:0, r:0},
     skills:{
       p:{n:'인내심 (패시브)', d:'5초간 피해를 입지 않으면 매초 최대 체력의 2.5%를 회복합니다.'},
-      q:{n:'결정타 (Q)', d:'2.5초간 이동 속도가 증가하고, 다음 기본 공격이 강화되어 적을 1.5초간 침묵시킵니다.'},
+      q:{n:'결정타 (Q)', d:'다음 평타가 30~150 + 총AD 50% 추가 물리 피해를 입히고 1.5초 침묵시킵니다. (구조물 적용)'},
       w:{n:'용기 (W)', d:'2초간 받는 피해가 40% 감소하며 보호막을 생성합니다.'},
-      e:{n:'심판 (E)', d:'3초간 검을 들고 회전하며 주변 원형 범위의 적들에게 지속 물리 피해를 입힙니다.'},
-      r:{n:'데마시아의 정의 (R)', d:'대상 적 챔피언에게 거대한 검을 내려꽂아 잃은 체력에 비례한 고정 피해를 입힙니다.'}
+      e:{n:'심판 (E)', d:'3초간 7회 회전하며 회전당 4~20 + 총AD 38% 물리 피해를 입힙니다.'},
+      r:{n:'데마시아의 정의 (R)', d:'대상 적에게 150/300/450 + 대상 잃은 체력의 25/30/35% 고정 피해를 입힙니다.'}
     }
   },
   leesin: {
     id:'leesin', name:'리 신', role:'jungle', roleKr:'정글 / 근접 전사', ico:'🥋', color:'#d35400', stroke:'#f39c12',
-    hp:1380, mp:320, ad:46, as:1.05, ms:207, rng:140,
+    hp:1380, mp:320, ad:66, bonusAd:15, ap:0, armor:36, mr:32, as:1.05, ms:207, rng:140,
     mcd:{q:8, w:12, e:10, r:50}, cdStep:{q:0.6, w:0.8, e:0.7, r:5.0},
     cost:{q:35, w:35, e:35, r:0},
     skills:{
       p:{n:'질풍격 (패시브)', d:'스킬 사용 후 다음 2회 기본 공격의 공격 속도가 35% 증가합니다.'},
-      q:{n:'음파 / 공명의 일격 (Q)', d:'직선 음파를 발사합니다. 적중 시 3초 안에 Q를 한 번 더 누르면 해당 적에게 즉시 돌진해 추가 피해를 줍니다.'},
-      w:{n:'방호 (W)', d:'마우스 근처의 아군 챔피언·미니언·와드 위치로 빠르게 돌진하며 보호막을 획득합니다.'},
-      e:{n:'폭풍 (E)', d:'주변 원형 범위의 적에게 피해를 입히고 2초간 이동 속도를 35% 감소시킵니다.'},
-      r:{n:'용의 분노 (R)', d:'근접한 적 챔피언을 뒤로 강하게 발차기로 날려 보내 큰 물리 피해를 입힙니다.'}
+      q:{n:'음파 / 공명의 일격 (Q)', d:'1타: 55~175 + 추가AD 115% 물리 피해. 2타 돌진: 대상 잃은 체력 비례 최대 2배 물리 피해.'},
+      w:{n:'방호 (W)', d:'마우스 근처 아군/와드로 돌진하며 보호막을 획득합니다.'},
+      e:{n:'폭풍 (E)', d:'주변 적에게 35~155 + 총AD 100% 마법 피해를 입히고 2초간 둔화시킵니다.'},
+      r:{n:'용의 분노 (R)', d:'근접한 적을 날려 보내며 175/400/625 + 추가AD 200% 물리 피해를 입힙니다.'}
     }
   },
   ahri: {
     id:'ahri', name:'아리', role:'mid', roleKr:'미드 / 원거리 마법사', ico:'🦊', color:'#8e44ad', stroke:'#d980fa',
-    hp:1220, mp:420, ad:41, as:0.95, ms:200, rng:265,
+    hp:1220, mp:420, ad:53, bonusAd:0, ap:45, armor:21, mr:30, as:0.95, ms:200, rng:265,
     mcd:{q:7, w:9, e:12, r:55}, cdStep:{q:0.5, w:0.6, e:0.7, r:5.0},
     cost:{q:45, w:40, e:50, r:80},
     skills:{
       p:{n:'정기 흡수 (패시브)', d:'적 유닛 9마리를 처치할 때마다 아리의 체력을 대폭 회복합니다.'},
-      q:{n:'현혹의 구슬 (Q)', d:'마우스 방향으로 구슬을 던졌다가 다시 아리에게 돌아오며 왕복 경로의 모든 적에게 피해를 줍니다.'},
-      w:{n:'여우불 (W)', d:'이동 속도가 증가하고 주변 적을 자동 추적하는 여우불 3개를 발사합니다.'},
-      e:{n:'매혹 (E)', d:'하트 투사체를 발사해 처음 맞은 적을 1.5초간 기절시키고 아리 쪽으로 천천히 걸어오게 합니다.'},
-      r:{n:'혼령 질주 (R)', d:'마우스 방향으로 짧은 거리 돌진하며 주변 적에게 탄환을 발사합니다. (10초 내 최대 3회 연속 사용 가능)'}
+      q:{n:'현혹의 구슬 (Q)', d:'갈 때 40~140 + AP 50% 마법 피해 / 돌아올 때 40~140 + AP 50% 고정 피해를 입힙니다.'},
+      w:{n:'여우불 (W)', d:'여우불 3발을 발사해 발당 45~145 + AP 30% 마법 피해를 입힙니다.'},
+      e:{n:'매혹 (E)', d:'하트를 발사해 80~200 + AP 75% 마법 피해를 입히고 1.5초간 매혹시킵니다.'},
+      r:{n:'혼령 질주 (R)', d:'최대 3회 돌진하며 주변 적에게 발당 60/90/120 + AP 35% 마법 피해를 입힙니다.'}
     }
   },
   ezreal: {
     id:'ezreal', name:'이즈리얼', role:'bot', roleKr:'원딜 / 원거리 딜러', ico:'🏹', color:'#0984e3', stroke:'#f1c40f',
-    hp:1240, mp:400, ad:45, as:1.05, ms:200, rng:275,
+    hp:1240, mp:400, ad:62, bonusAd:15, ap:20, armor:24, mr:30, as:1.05, ms:200, rng:275,
     mcd:{q:5.5, w:10, e:22, r:50}, cdStep:{q:0.5, w:0.7, e:1.0, r:5.0},
     cost:{q:28, w:40, e:60, r:90},
     skills:{
       p:{n:'끓어오르는 주문의 힘 (패시브)', d:'스킬이 적중할 때마다 공격 속도가 일시적으로 증가합니다.'},
-      q:{n:'신비한 화살 (Q)', d:'긴 사거리 직선 화살을 발사합니다. 적중 시 모든 스킬 쿨타임이 1초 감소합니다.'},
-      w:{n:'정수의 흐름 (W)', d:'적에게 에너지 고리를 남겨 표식을 부여하고, 다음 공격 시 폭발해 추가 피해를 줍니다.'},
-      e:{n:'비전 이동 (E)', d:'마우스 방향으로 즉시 순간이동하며 가장 가까운 적에게 유도 화살을 발사합니다.'},
-      r:{n:'정조준 일격 (R)', d:'맵 끝까지 날아가는 거대한 초장거리 에너지 파동을 발사해 경로상의 적들을 관통합니다.'}
+      q:{n:'신비한 화살 (Q)', d:'20~120 + 총AD 130% + AP 15% 물리 피해를 입히고 모든 쿨타임을 1초 감소시킵니다.'},
+      w:{n:'정수의 흐름 (W)', d:'표식 부여 후 타격 시 80~300 + 추가AD 100% + AP 75% 마법 피해를 입힙니다.'},
+      e:{n:'비전 이동 (E)', d:'순간이동 후 가장 가까운 적에게 80~280 + 추가AD 50% + AP 75% 마법 피해를 입힙니다.'},
+      r:{n:'정조준 일격 (R)', d:'초장거리 파동으로 350/525/700 + 추가AD 100% + AP 90% 마법 피해를 입힙니다.'}
     }
   },
   blitzcrank: {
     id:'blitzcrank', name:'블리츠크랭크', role:'bot', roleKr:'서포터 / 근접 탱커', ico:'🤖', color:'#d4ac0d', stroke:'#ffeaa7',
-    hp:1520, mp:360, ad:46, as:0.90, ms:198, rng:135,
+    hp:1520, mp:360, ad:62, bonusAd:0, ap:35, armor:40, mr:32, as:0.90, ms:198, rng:135,
     mcd:{q:16, w:15, e:9, r:45}, cdStep:{q:1.0, w:0.8, e:0.6, r:5.0},
     cost:{q:65, w:50, e:25, r:80},
     skills:{
-      p:{n:'마나 보호막 (패시브)', d:'체력이 30% 이하로 떨어지면 최대 마나에 비례한 큰 보호막을 자동 생성합니다. (쿨타임 40초)'},
-      q:{n:'로켓 손 (Q)', d:'긴 사거리의 기계 손을 발사해 처음 맞은 적을 블리츠크랭크 바로 앞까지 끌어당깁니다.'},
+      p:{n:'마나 보호막 (패시브)', d:'체력이 30% 이하로 떨어지면 최대 마나에 비례한 보호막을 자동 생성합니다.'},
+      q:{n:'로켓 손 (Q)', d:'100~300 + AP 100% 마법 피해를 입히고 적을 바로 앞까지 끌어당깁니다.'},
       w:{n:'폭주 (W)', d:'4초간 이동 속도와 공격 속도가 대폭 증가합니다.'},
-      e:{n:'강철 주먹 (E)', d:'다음 기본 공격이 치명타로 들어가며 적을 1초간 공중에 띄워 기절시킵니다.'},
-      r:{n:'정전기장 (R)', d:'주변 넓은 원형 범위의 적들에게 광역 번개 피해를 입히고 1초간 침묵시킵니다.'}
+      e:{n:'강철 주먹 (E)', d:'다음 평타가 총AD 200% 치명타 물리 피해를 입히고 1초간 에어본시킵니다.'},
+      r:{n:'정전기장 (R)', d:'주변 광역 범위에 275/400/525 + AP 100% 마법 피해를 입히고 1초간 침묵시킵니다.'}
     }
   }
 };
@@ -335,7 +345,7 @@ renderChampSelect();
 
 // 3000x3000 소환사의 협곡
 const MAP_S = 3000;
-let cam = {x: 0, y: MAP_S - innerHeight, lock: true};
+let cam = {x: 0, y: MAP_S - getViewH(), lock: true};
 let mouse = {x: innerWidth/2, y: innerHeight/2, wx: 420, wy: 2580};
 let spaceHeld = false, showRange = false, over = false;
 let gameTime = 0, waveCount = 0;
@@ -351,16 +361,16 @@ let inhibTimers = {
 };
 let wards = [], wardCd = 0;
 
-// 상점 데이터 (신발 이속 상승폭도 60% 템포 비율에 맞춰 28 / 18로 조정)
+// 상점 데이터 (AD 및 AP 아이템 모두 지원)
 const shopData = [
   {ico:"🧪", n:"체력물약", full:"체력 물약 (1~6번 사용)", d:"사용 시 5초간 체력 150 회복", g:50, consumable:true, healHp:150, healMp:0},
   {ico:"💧", n:"마나물약", full:"마나 물약 (1~6번 사용)", d:"사용 시 마나 120 즉시 회복", g:50, consumable:true, healHp:0, healMp:120},
-  {ico:"⚔️", n:"도란검", full:"도란의 검", d:"기본 공격력 +15, 최대 체력 +80", g:450, ad:15, as:0, hp:80, ms:0},
-  {ico:"👢", n:"광전사", full:"광전사의 군화", d:"이동속도 +28, 공속 +15%", g:500, ad:0, as:0.15, hp:0, ms:28},
-  {ico:"🗡️", n:"BF대검", full:"B.F. 대검", d:"기본 공격력 +40", g:1300, ad:40, as:0, hp:0, ms:0},
-  {ico:"🏹", n:"유령무희", full:"유령 무희", d:"공속 +30%, 이동속도 +18", g:1400, ad:0, as:0.30, hp:0, ms:18},
-  {ico:"🛡️", n:"워모그", full:"워모그의 갑옷", d:"최대 체력 +450", g:1600, ad:0, as:0, hp:450, ms:0},
-  {ico:"👑", n:"무한대검", full:"무한의 대검", d:"기본 공격력 +80, 최대 체력 +150", g:3400, ad:80, as:0.1, hp:150, ms:0}
+  {ico:"⚔️", n:"도란검", full:"도란의 검", d:"추가 공격력(AD) +15, 최대 체력 +80", g:450, ad:15, ap:0, as:0, hp:80, ms:0},
+  {ico:"📖", n:"증폭의고서", full:"증폭의 고서", d:"주문력(AP) +30", g:435, ad:0, ap:30, as:0, hp:0, ms:0},
+  {ico:"👢", n:"광전사", full:"광전사의 군화", d:"이동속도 +28, 공속 +15%", g:500, ad:0, ap:0, as:0.15, hp:0, ms:28},
+  {ico:"🗡️", n:"BF대검", full:"B.F. 대검", d:"추가 공격력(AD) +45", g:1300, ad:45, ap:0, as:0, hp:0, ms:0},
+  {ico:"🪄", n:"쓸큰지", full:"쓸데없이 큰 지팡이", d:"주문력(AP) +70", g:1250, ad:0, ap:70, as:0, hp:0, ms:0},
+  {ico:"👑", n:"무한대검", full:"무한의 대검", d:"추가 AD +80, AP +40, 최대 체력 +150", g:3400, ad:80, ap:40, as:0.1, hp:150, ms:0}
 ];
 
 const LANE_PATHS = {
@@ -374,45 +384,45 @@ const wells = [
   {team:'red',  x:2800, y:200, r:130}
 ];
 
-// [패치 3 적용] 진영별 포탑 11개 + 억제기 3개 + 넥서스 1개 (heatStacks: 연속 챔피언 타격 중첩)
+// [수정 2] 포탑 및 구조물 체력 상향: 1·2·3차 포탑 5,000 / 쌍둥이 포탑 및 넥서스 8,000
 let structs = [
-  {id:'b_nex', team:'blue', lane:'base', tier:5, type:'nexus', x:370, y:2630, r:50, hp:3800, mhp:3800, rng:0, ad:0, cd:0, target:null, heatStacks:0},
-  {id:'b_tw1', team:'blue', lane:'base', tier:4, type:'tower', name:'쌍둥이', x:410, y:2510, r:28, hp:1800, mhp:1800, rng:290, ad:155, cd:0, target:null, heatStacks:0},
-  {id:'b_tw2', team:'blue', lane:'base', tier:4, type:'tower', name:'쌍둥이', x:490, y:2590, r:28, hp:1800, mhp:1800, rng:290, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'b_nex', team:'blue', lane:'base', tier:5, type:'nexus', x:370, y:2630, r:50, hp:8000, mhp:8000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
+  {id:'b_tw1', team:'blue', lane:'base', tier:4, type:'tower', name:'쌍둥이', x:410, y:2510, r:28, hp:8000, mhp:8000, rng:290, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'b_tw2', team:'blue', lane:'base', tier:4, type:'tower', name:'쌍둥이', x:490, y:2590, r:28, hp:8000, mhp:8000, rng:290, ad:155, cd:0, target:null, heatStacks:0},
 
-  {id:'b_top1', team:'blue', lane:'top', tier:1, type:'tower', name:'1차 포탑', x:320, y:1150, r:30, hp:1500, mhp:1500, rng:285, ad:135, cd:0, target:null, heatStacks:0},
-  {id:'b_top2', team:'blue', lane:'top', tier:2, type:'tower', name:'2차 포탑', x:320, y:1620, r:30, hp:1650, mhp:1650, rng:285, ad:145, cd:0, target:null, heatStacks:0},
-  {id:'b_top3', team:'blue', lane:'top', tier:3, type:'tower', name:'3차 포탑', x:320, y:2060, r:30, hp:1800, mhp:1800, rng:285, ad:155, cd:0, target:null, heatStacks:0},
-  {id:'b_top_inh', team:'blue', lane:'top', tier:3.5, type:'inhib', name:'탑 억제기', x:335, y:2310, r:32, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
+  {id:'b_top1', team:'blue', lane:'top', tier:1, type:'tower', name:'1차 포탑', x:320, y:1150, r:30, hp:5000, mhp:5000, rng:285, ad:135, cd:0, target:null, heatStacks:0},
+  {id:'b_top2', team:'blue', lane:'top', tier:2, type:'tower', name:'2차 포탑', x:320, y:1620, r:30, hp:5000, mhp:5000, rng:285, ad:145, cd:0, target:null, heatStacks:0},
+  {id:'b_top3', team:'blue', lane:'top', tier:3, type:'tower', name:'3차 포탑', x:320, y:2060, r:30, hp:5000, mhp:5000, rng:285, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'b_top_inh', team:'blue', lane:'top', tier:3.5, type:'inhib', name:'탑 억제기', x:335, y:2310, r:32, hp:4000, mhp:4000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
 
-  {id:'b_mid1', team:'blue', lane:'mid', tier:1, type:'tower', name:'1차 포탑', x:1240, y:1760, r:30, hp:1500, mhp:1500, rng:285, ad:135, cd:0, target:null, heatStacks:0},
-  {id:'b_mid2', team:'blue', lane:'mid', tier:2, type:'tower', name:'2차 포탑', x:980, y:2020, r:30, hp:1650, mhp:1650, rng:285, ad:145, cd:0, target:null, heatStacks:0},
-  {id:'b_mid3', team:'blue', lane:'mid', tier:3, type:'tower', name:'3차 포탑', x:740, y:2260, r:30, hp:1800, mhp:1800, rng:285, ad:155, cd:0, target:null, heatStacks:0},
-  {id:'b_mid_inh', team:'blue', lane:'mid', tier:3.5, type:'inhib', name:'미드 억제기', x:580, y:2420, r:32, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
+  {id:'b_mid1', team:'blue', lane:'mid', tier:1, type:'tower', name:'1차 포탑', x:1240, y:1760, r:30, hp:5000, mhp:5000, rng:285, ad:135, cd:0, target:null, heatStacks:0},
+  {id:'b_mid2', team:'blue', lane:'mid', tier:2, type:'tower', name:'2차 포탑', x:980, y:2020, r:30, hp:5000, mhp:5000, rng:285, ad:145, cd:0, target:null, heatStacks:0},
+  {id:'b_mid3', team:'blue', lane:'mid', tier:3, type:'tower', name:'3차 포탑', x:740, y:2260, r:30, hp:5000, mhp:5000, rng:285, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'b_mid_inh', team:'blue', lane:'mid', tier:3.5, type:'inhib', name:'미드 억제기', x:580, y:2420, r:32, hp:4000, mhp:4000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
 
-  {id:'b_bot1', team:'blue', lane:'bot', tier:1, type:'tower', name:'1차 포탑', x:1850, y:2680, r:30, hp:1500, mhp:1500, rng:285, ad:135, cd:0, target:null, heatStacks:0},
-  {id:'b_bot2', team:'blue', lane:'bot', tier:2, type:'tower', name:'2차 포탑', x:1380, y:2680, r:30, hp:1650, mhp:1650, rng:285, ad:145, cd:0, target:null, heatStacks:0},
-  {id:'b_bot3', team:'blue', lane:'bot', tier:3, type:'tower', name:'3차 포탑', x:940, y:2680, r:30, hp:1800, mhp:1800, rng:285, ad:155, cd:0, target:null, heatStacks:0},
-  {id:'b_bot_inh', team:'blue', lane:'bot', tier:3.5, type:'inhib', name:'바텀 억제기', x:690, y:2665, r:32, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
+  {id:'b_bot1', team:'blue', lane:'bot', tier:1, type:'tower', name:'1차 포탑', x:1850, y:2680, r:30, hp:5000, mhp:5000, rng:285, ad:135, cd:0, target:null, heatStacks:0},
+  {id:'b_bot2', team:'blue', lane:'bot', tier:2, type:'tower', name:'2차 포탑', x:1380, y:2680, r:30, hp:5000, mhp:5000, rng:285, ad:145, cd:0, target:null, heatStacks:0},
+  {id:'b_bot3', team:'blue', lane:'bot', tier:3, type:'tower', name:'3차 포탑', x:940, y:2680, r:30, hp:5000, mhp:5000, rng:285, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'b_bot_inh', team:'blue', lane:'bot', tier:3.5, type:'inhib', name:'바텀 억제기', x:690, y:2665, r:32, hp:4000, mhp:4000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
 
-  {id:'r_nex', team:'red', lane:'base', tier:5, type:'nexus', x:2630, y:370, r:50, hp:3800, mhp:3800, rng:0, ad:0, cd:0, target:null, heatStacks:0},
-  {id:'r_tw1', team:'red', lane:'base', tier:4, type:'tower', name:'쌍둥이', x:2510, y:410, r:28, hp:1800, mhp:1800, rng:290, ad:155, cd:0, target:null, heatStacks:0},
-  {id:'r_tw2', team:'red', lane:'base', tier:4, type:'tower', name:'쌍둥이', x:2590, y:490, r:28, hp:1800, mhp:1800, rng:290, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'r_nex', team:'red', lane:'base', tier:5, type:'nexus', x:2630, y:370, r:50, hp:8000, mhp:8000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
+  {id:'r_tw1', team:'red', lane:'base', tier:4, type:'tower', name:'쌍둥이', x:2510, y:410, r:28, hp:8000, mhp:8000, rng:290, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'r_tw2', team:'red', lane:'base', tier:4, type:'tower', name:'쌍둥이', x:2590, y:490, r:28, hp:8000, mhp:8000, rng:290, ad:155, cd:0, target:null, heatStacks:0},
 
-  {id:'r_top1', team:'red', lane:'top', tier:1, type:'tower', name:'1차 포탑', x:1150, y:320, r:30, hp:1500, mhp:1500, rng:285, ad:135, cd:0, target:null, heatStacks:0},
-  {id:'r_top2', team:'red', lane:'top', tier:2, type:'tower', name:'2차 포탑', x:1620, y:320, r:30, hp:1650, mhp:1650, rng:285, ad:145, cd:0, target:null, heatStacks:0},
-  {id:'r_top3', team:'red', lane:'top', tier:3, type:'tower', name:'3차 포탑', x:2060, y:320, r:30, hp:1800, mhp:1800, rng:285, ad:155, cd:0, target:null, heatStacks:0},
-  {id:'r_top_inh', team:'red', lane:'top', tier:3.5, type:'inhib', name:'탑 억제기', x:2310, y:335, r:32, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
+  {id:'r_top1', team:'red', lane:'top', tier:1, type:'tower', name:'1차 포탑', x:1150, y:320, r:30, hp:5000, mhp:5000, rng:285, ad:135, cd:0, target:null, heatStacks:0},
+  {id:'r_top2', team:'red', lane:'top', tier:2, type:'tower', name:'2차 포탑', x:1620, y:320, r:30, hp:5000, mhp:5000, rng:285, ad:145, cd:0, target:null, heatStacks:0},
+  {id:'r_top3', team:'red', lane:'top', tier:3, type:'tower', name:'3차 포탑', x:2060, y:320, r:30, hp:5000, mhp:5000, rng:285, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'r_top_inh', team:'red', lane:'top', tier:3.5, type:'inhib', name:'탑 억제기', x:2310, y:335, r:32, hp:4000, mhp:4000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
 
-  {id:'r_mid1', team:'red', lane:'mid', tier:1, type:'tower', name:'1차 포탑', x:1760, y:1240, r:30, hp:1500, mhp:1500, rng:285, ad:135, cd:0, target:null, heatStacks:0},
-  {id:'r_mid2', team:'red', lane:'mid', tier:2, type:'tower', name:'2차 포탑', x:2020, y:980, r:30, hp:1650, mhp:1650, rng:285, ad:145, cd:0, target:null, heatStacks:0},
-  {id:'r_mid3', team:'red', lane:'mid', tier:3, type:'tower', name:'3차 포탑', x:2260, y:740, r:30, hp:1800, mhp:1800, rng:285, ad:155, cd:0, target:null, heatStacks:0},
-  {id:'r_mid_inh', team:'red', lane:'mid', tier:3.5, type:'inhib', name:'미드 억제기', x:2420, y:580, r:32, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
+  {id:'r_mid1', team:'red', lane:'mid', tier:1, type:'tower', name:'1차 포탑', x:1760, y:1240, r:30, hp:5000, mhp:5000, rng:285, ad:135, cd:0, target:null, heatStacks:0},
+  {id:'r_mid2', team:'red', lane:'mid', tier:2, type:'tower', name:'2차 포탑', x:2020, y:980, r:30, hp:5000, mhp:5000, rng:285, ad:145, cd:0, target:null, heatStacks:0},
+  {id:'r_mid3', team:'red', lane:'mid', tier:3, type:'tower', name:'3차 포탑', x:2260, y:740, r:30, hp:5000, mhp:5000, rng:285, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'r_mid_inh', team:'red', lane:'mid', tier:3.5, type:'inhib', name:'미드 억제기', x:2420, y:580, r:32, hp:4000, mhp:4000, rng:0, ad:0, cd:0, target:null, heatStacks:0},
 
-  {id:'r_bot1', team:'red', lane:'bot', tier:1, type:'tower', name:'1차 포탑', x:2680, y:1850, r:30, hp:1500, mhp:1500, rng:285, ad:135, cd:0, target:null, heatStacks:0},
-  {id:'r_bot2', team:'red', lane:'bot', tier:2, type:'tower', name:'2차 포탑', x:2680, y:1380, r:30, hp:1650, mhp:1650, rng:285, ad:145, cd:0, target:null, heatStacks:0},
-  {id:'r_bot3', team:'red', lane:'bot', tier:3, type:'tower', name:'3차 포탑', x:2680, y:940, r:30, hp:1800, mhp:1800, rng:285, ad:155, cd:0, target:null, heatStacks:0},
-  {id:'r_bot_inh', team:'red', lane:'bot', tier:3.5, type:'inhib', name:'바텀 억제기', x:2665, y:690, r:32, hp:2000, mhp:2000, rng:0, ad:0, cd:0, target:null, heatStacks:0}
+  {id:'r_bot1', team:'red', lane:'bot', tier:1, type:'tower', name:'1차 포탑', x:2680, y:1850, r:30, hp:5000, mhp:5000, rng:285, ad:135, cd:0, target:null, heatStacks:0},
+  {id:'r_bot2', team:'red', lane:'bot', tier:2, type:'tower', name:'2차 포탑', x:2680, y:1380, r:30, hp:5000, mhp:5000, rng:285, ad:145, cd:0, target:null, heatStacks:0},
+  {id:'r_bot3', team:'red', lane:'bot', tier:3, type:'tower', name:'3차 포탑', x:2680, y:940, r:30, hp:5000, mhp:5000, rng:285, ad:155, cd:0, target:null, heatStacks:0},
+  {id:'r_bot_inh', team:'red', lane:'bot', tier:3.5, type:'inhib', name:'바텀 억제기', x:2665, y:690, r:32, hp:4000, mhp:4000, rng:0, ad:0, cd:0, target:null, heatStacks:0}
 ];
 
 function isStructInvulnerable(s){
@@ -424,7 +434,6 @@ function isStructInvulnerable(s){
   return false;
 }
 
-// [패치 3 헬퍼] 포탑 사거리 안에 적 미니언이 존재하는지 확인 (백도어 방어 판정)
 function hasEnemyMinionsInTowerRange(tower){
   const enemyTeam = tower.team === 'blue' ? 'red' : 'blue';
   return minions.some(m => m.team === enemyTeam && m.hp > 0 && Math.hypot(m.x - tower.x, m.y - tower.y) <= tower.rng + m.r);
@@ -435,14 +444,16 @@ let jungleBosses = [
   {id:'baron',  name:'내셔 남작 (바론)', x:1050, y:950, r:44, hp:5400, mhp:5400, ad:130, rng:240, cd:0, respawn:0, col:'#8e44ad'}
 ];
 
-// 챔피언 인스턴스 생성기 (플레이어 및 AI 공통 사용)
+// 챔피언 인스턴스 생성기
 function createChampInstance(champId, team, isPlayer, sx, sy){
   const def = CHAMP_DEFS[champId];
   return {
     isPlayer, champId, def, name: isPlayer ? `${def.name} (나)` : def.name,
     team, role: def.role, x: sx, y: sy, tx: sx, ty: sy, r: 20,
     hp: def.hp, mhp: def.hp, mp: def.mp, mmp: def.mp,
-    baseAd: def.ad, atkSpeed: def.as, ms: def.ms, rng: def.rng, atkCd: 0,
+    baseAd: def.ad, bonusAd: def.bonusAd, ap: def.ap,
+    armor: def.armor, mr: def.mr,
+    atkSpeed: def.as, ms: def.ms, rng: def.rng, atkCd: 0,
     lv: 1, xp: 0, mxp: 100, skillPts: 1,
     slv: {q:0, w:0, e:0, r:0},
     cd: {q:0, w:0, e:0, r:0, d:0, f:0, p:0},
@@ -450,6 +461,10 @@ function createChampInstance(champId, team, isPlayer, sx, sy){
     buff: {w:0, d:0, qEmp:0, eSpin:0, blitzE:false, blitzW:0, shield:0, shieldT:0, stunT:0, silenceT:0, slowT:0, ezMark:0, ezPassive:0, leePassive:0},
     recast: {leeQTarget:null, leeQT:0, ahriRCharges:0, ahriRT:0},
     passiveState: {lastCombatT:0, ahriKills:0},
+    // [수정 1] AI 행동 결정 주기(0.3초 = 300ms) 및 목표 캐시
+    aiDecisionTimer: Math.random() * 0.3,
+    aiGoalX: sx, aiGoalY: sy,
+    aiStateText: '',
     gold: 500, k: 0, d: 0, cs: 0, inv: [],
     target: null, recall: 0, respawn: 0, facing: team === 'blue' ? -Math.PI/4 : Math.PI*3/4, regenHoT: 0
   };
@@ -459,9 +474,13 @@ let p = createChampInstance('ezreal', 'blue', true, 300, 2700);
 let aiChamps = [];
 
 function getAllChampions(){ return [p, ...aiChamps]; }
-function getChampAd(ch){
+function getChampTotalAd(ch){
   const mult = 1 + teamBuffs[ch.team].drakeStacks * 0.10;
-  return Math.round(ch.baseAd * mult);
+  return Math.round((ch.baseAd + ch.bonusAd) * mult);
+}
+function getChampBonusAd(ch){
+  const mult = 1 + teamBuffs[ch.team].drakeStacks * 0.10;
+  return Math.round(ch.bonusAd * mult);
 }
 
 // 1. 게임 시작 버튼 클릭 시 팀 배정
@@ -469,11 +488,9 @@ function startGame(){
   document.getElementById('champ-select').style.display = 'none';
   const allIds = Object.keys(CHAMP_DEFS);
 
-  // 플레이어 챔피언 생성
   p = createChampInstance(selectedChampId, 'blue', true, 300, 2700);
   document.getElementById('hud-cname').innerText = `${p.def.ico} ${p.def.name}`;
 
-  // 아군 AI 4명 (내가 고르지 않은 나머지 4명)
   const blueSpawns = [{x:340,y:2550},{x:450,y:2650},{x:420,y:2520},{x:480,y:2740}];
   let bIdx = 0;
   allIds.forEach(cid => {
@@ -483,14 +500,12 @@ function startGame(){
     }
   });
 
-  // 적군 AI 5명 (5종 대표 챔피언 전원)
   const redSpawns = [{x:2560,y:340},{x:2650,y:450},{x:2540,y:460},{x:2730,y:460},{x:2760,y:520}];
   allIds.forEach((cid, idx) => {
     const sp = redSpawns[idx];
     aiChamps.push(createChampInstance(cid, 'red', false, sp.x, sp.y));
   });
 
-  // AI 1레벨 시작 스킬 1개 자동 습득
   aiChamps.forEach(ai => aiAutoSkillUp(ai));
 
   gameStarted = true;
@@ -499,7 +514,7 @@ function startGame(){
   setInterval(spawnWave, 30000);
 }
 
-// 2. 리그 오브 레전드 정통 스킬 레벨업 제한 공식
+// 스킬 레벨업 제한 공식
 function canLevelUpSkill(ch, k){
   if (ch.skillPts <= 0) return false;
   const cur = ch.slv[k];
@@ -539,20 +554,17 @@ function updateSkillUI(){
     if (lv > 0) slot.classList.remove('locked');
     else slot.classList.add('locked');
 
-    // 노란색 점 업데이트
     const dots = document.getElementById('dots-' + k).querySelectorAll('.dot');
     dots.forEach((d, idx) => {
       if (idx < lv) d.classList.add('on');
       else d.classList.remove('on');
     });
 
-    // '+' 버튼 활성화 제어
     const btn = document.getElementById('up-' + k);
     btn.style.display = canLevelUpSkill(p, k) ? 'flex' : 'none';
   });
 }
 
-// 스킬 툴팁 표시 (레벨업에 따른 피해량 +20%/레벨 및 쿨타임 감소 반영)
 function showTooltip(k){
   const tt = document.getElementById('tooltip');
   const info = p.def.skills[k];
@@ -560,13 +572,11 @@ function showTooltip(k){
     tt.innerHTML = `<div class="tt-title"><span>${info.n}</span><span class="tt-cd">고유 지속 효과</span></div><div>${info.d}</div>`;
   } else {
     const lv = Math.max(1, p.slv[k]);
-    const dmgBonus = (lv - 1) * 20;
     const realCd = Math.max(1.5, p.mcd[k] - (lv - 1) * p.def.cdStep[k]).toFixed(1);
     const manaCost = p.def.cost[k];
     tt.innerHTML = `
       <div class="tt-title"><span>${info.n} [Lv.${p.slv[k]}]</span><span class="tt-cd">쿨타임: ${realCd}초 | 마나: ${manaCost}</span></div>
       <div>${info.d}</div>
-      <div style="margin-top:4px;font-size:11px;color:#2ecc71">현재 스킬 등급 효과: 기본 피해량 +${dmgBonus}%</div>
     `;
   }
   tt.style.display = 'block';
@@ -583,6 +593,8 @@ function gainXp(ch, v){
     ch.mhp += 110; ch.hp += 110;
     ch.mmp += 35; ch.mp += 35;
     ch.baseAd += 3.5;
+    ch.armor += 2.5;
+    ch.mr += 1.2;
     if (ch.isPlayer){
       addFloat(ch.x, ch.y - 42, `LEVEL UP! (Lv.${ch.lv})`, "#2ecc71");
       updateSkillUI();
@@ -607,10 +619,11 @@ shopData.forEach(it => {
     if (p.gold < it.g) return addFloat(p.x, p.y - 30, "골드가 부족합니다!", "#e74c3c");
     p.gold -= it.g;
     if (!it.consumable){
-      p.baseAd += it.ad;
-      p.atkSpeed = +(p.atkSpeed + it.as).toFixed(2);
-      p.mhp += it.hp; p.hp += it.hp;
-      p.ms += it.ms;
+      p.bonusAd += (it.ad || 0);
+      p.ap += (it.ap || 0);
+      p.atkSpeed = +(p.atkSpeed + (it.as || 0)).toFixed(2);
+      p.mhp += (it.hp || 0); p.hp += (it.hp || 0);
+      p.ms += (it.ms || 0);
     }
     p.inv.push({...it});
     renderInv();
@@ -665,7 +678,25 @@ function addFloat(x, y, text, color, isDmg = false){
   dmgTexts.push({x: x + (Math.random()-0.5)*14, y, text, color, life: isDmg ? 40 : 54, isDmg});
 }
 
-// [패치 1 적용] 미니언 생성 (미니언 이동속도를 챔피언 60% 템포에 맞춰 1.85 -> 1.1로 조정)
+// [수정 1] 유닛이 구조물 중심과 겹치지 않도록 건물 반경 바깥으로 부드럽게 밀어내는 원형 충돌 처리
+function resolveStructureCollision(unit){
+  for (let i = 0; i < structs.length; i++){
+    const s = structs[i];
+    if (s.hp <= 0) continue;
+    const dx = unit.x - s.x;
+    const dy = unit.y - s.y;
+    const d = Math.hypot(dx, dy);
+    const minDist = unit.r + s.r + 3;
+    if (d < minDist){
+      const ang = d === 0 ? Math.random() * Math.PI * 2 : Math.atan2(dy, dx);
+      const overlap = minDist - d;
+      unit.x += Math.cos(ang) * overlap;
+      unit.y += Math.sin(ang) * overlap;
+    }
+  }
+}
+
+// 미니언 생성 (AI 결정 주기 0.3초 타이머 포함)
 function createMinionUnit(team, lane, mType, scaleFactor){
   const path = team === 'blue' ? LANE_PATHS[lane] : [...LANE_PATHS[lane]].reverse();
   const sx = team === 'blue' ? 430 + (Math.random()-0.5)*22 : 2570 + (Math.random()-0.5)*22;
@@ -684,6 +715,8 @@ function createMinionUnit(team, lane, mType, scaleFactor){
     x:sx, y:sy, r:stats.r, baseR:stats.r,
     hp:maxHp, mhp:maxHp, baseAd, rng:stats.rng, baseRng:stats.rng,
     gold:stats.gold, cd:0, spd:1.1, baronEmpowered:false,
+    aiDecisionTimer: Math.random() * 0.3,
+    cachedTarget: null,
     buff:{stunT:0, slowT:0, ezMark:0}
   });
 }
@@ -723,24 +756,47 @@ function isVisibleToBlue(x, y){
   return false;
 }
 
-// 공통 피해 적용 함수 (보호막, 가렌 W 피해감소, 블리츠 마나보호막, 아리 패시브, [패치 3] 포탑 백도어 방지 70% 피해 감소 통합)
-function dealDamage(attacker, target, rawDmg, color = '#ffeaa7', isTrueDmg = false){
+// [수정 2 & 4] 공통 피해 적용 함수
+// - options.isSkill === true 이고 options.isAutoAttack !== true 인 경우 구조물(포탑/억제기/넥서스)은 완전 면역(피해 0)
+// - dmgType: 'physical' | 'magic' | 'true' 방어력/마저 감쇄 반영
+function dealDamage(attacker, target, rawDmg, color = '#ffeaa7', dmgType = 'physical', options = {}){
   if (!target || target.hp <= 0 || (target.respawn && target.respawn > 0)) return;
   if (target.type && isStructInvulnerable(target)) return;
 
-  let dmg = Math.round(rawDmg);
+  const { isSkill = false, isAutoAttack = false } = options;
 
-  // [패치 3 적용] 포탑 사거리 안에 적 미니언이 한 마리도 없을 때 받는 피해 70% 감소 (백도어 방지)
+  // [수정 2] 포탑/억제기/넥서스 등 모든 구조물은 스킬 공격에 완전 면역(피해 0), 평타(강화 평타 포함) 및 미니언 공격만 허용
+  if (target.type){
+    if (isSkill && !isAutoAttack){
+      addFloat(target.x, target.y - 36, "🛡️ 스킬 면역", "#95a5a6");
+      return;
+    }
+  }
+
+  let dmg = rawDmg;
+
+  // 방어력/마법 저항력 감쇄 적용 (고정 피해 true 는 무시)
+  if (!target.type && target.armor !== undefined){
+    if (dmgType === 'physical'){
+      dmg = dmg * (100 / (100 + Math.max(0, target.armor || 0)));
+    } else if (dmgType === 'magic'){
+      dmg = dmg * (100 / (100 + Math.max(0, target.mr || 0)));
+    }
+  }
+
+  // 포탑 사거리 안에 적 미니언이 한 마리도 없을 때 받는 피해 70% 감소 (백도어 방지)
   if (target.type === 'tower' && !hasEnemyMinionsInTowerRange(target)){
-    dmg = Math.max(1, Math.round(dmg * 0.3));
+    dmg = Math.max(1, dmg * 0.3);
     if (attacker && attacker.isPlayer && Math.random() < 0.35){
       addFloat(target.x, target.y - 44, "🛡️ 백도어 방어! (피해 70% 감소)", "#95a5a6");
     }
   }
 
+  dmg = Math.max(1, Math.round(dmg));
+
   if (target.buff){
     // 가렌 W 받는 피해 40% 감소
-    if (!isTrueDmg && target.champId === 'garen' && target.buff.w > 0){
+    if (dmgType !== 'true' && target.champId === 'garen' && target.buff.w > 0){
       dmg = Math.round(dmg * 0.6);
     }
     // 보호막 우선 흡수
@@ -751,17 +807,19 @@ function dealDamage(attacker, target, rawDmg, color = '#ffeaa7', isTrueDmg = fal
     }
   }
 
-  // 전투 기록 (가렌 패시브용)
   if (target.passiveState) target.passiveState.lastCombatT = gameTime;
 
   if (dmg > 0){
     target.hp -= dmg;
-    if (Math.hypot(target.x - (cam.x + c.width/2), target.y - (cam.y + c.height/2)) < 950){
-      addFloat(target.x, target.y - 24, `-${dmg}`, isTrueDmg ? '#ffffff' : color, true);
+    const viewCenterX = cam.x + getViewW() / 2;
+    const viewCenterY = cam.y + getViewH() / 2;
+    if (Math.hypot(target.x - viewCenterX, target.y - viewCenterY) < 1300){
+      const dispColor = dmgType === 'true' ? '#ffffff' : (dmgType === 'magic' ? '#74b9ff' : color);
+      addFloat(target.x, target.y - 24, `-${dmg}`, dispColor, true);
     }
   }
 
-  // 블리츠크랭크 패시브: 마나 보호막 (체력 30% 이하 시 자동 발동, 쿨 40초)
+  // 블리츠크랭크 패시브: 마나 보호막
   if (target.champId === 'blitzcrank' && target.hp > 0 && target.hp / target.mhp <= 0.30 && target.cd.p <= 0){
     target.cd.p = 40;
     const sh = Math.round(target.mmp * 0.6 + 150);
@@ -800,7 +858,6 @@ function dealDamage(attacker, target, rawDmg, color = '#ffeaa7', isTrueDmg = fal
     } else if (target.type){
       onStructDestroyed(target, attacker === p);
     } else {
-      // 미니언 처치
       if (attacker === p){
         p.cs++; p.gold += (target.gold || 20); gainXp(p, 38);
         addFloat(target.x, target.y - 30, `+${target.gold || 20}G`, "#f1c40f");
@@ -811,7 +868,7 @@ function dealDamage(attacker, target, rawDmg, color = '#ffeaa7', isTrueDmg = fal
   }
 }
 
-// [패치 1 & 2 적용] 챔피언 5종 고유 스킬 실행 함수 (스킬 기본 피해량 약 30% 하향 + 묵직한 투사체 속도)
+// [수정 4] 실제 리그 오브 레전드 스킬 데미지 공식 정확히 반영
 function castChampionSkill(ch, k, aimX, aimY){
   const lv = ch.slv[k];
   if (lv <= 0 || ch.respawn > 0 || over) return false;
@@ -820,14 +877,17 @@ function castChampionSkill(ch, k, aimX, aimY){
     return false;
   }
 
-  const dmgMult = 1 + (lv - 1) * 0.20;
+  const rank = Math.min(5, Math.max(1, lv));
+  const ultRank = Math.min(3, Math.max(1, lv));
   const baseCd = Math.max(1.5, ch.mcd[k] - (lv - 1) * ch.def.cdStep[k]);
   const cost = ch.def.cost[k];
-  const curAd = getChampAd(ch);
+  const totalAd = getChampTotalAd(ch);
+  const bonusAd = getChampBonusAd(ch);
+  const ap = ch.ap || 0;
   const ang = Math.atan2(aimY - ch.y, aimX - ch.x);
   const enemyTeam = ch.team === 'blue' ? 'red' : 'blue';
 
-  // [리 신 Q 2타: 공명의 일격]
+  // [리 신 Q 2타: 공명의 일격 - 대상 잃은 체력 비례 최대 2배 물리 피해]
   if (ch.champId === 'leesin' && k === 'q' && ch.recast.leeQT > 0 && ch.recast.leeQTarget && ch.recast.leeQTarget.hp > 0 && (!ch.recast.leeQTarget.respawn || ch.recast.leeQTarget.respawn <= 0)){
     const tgt = ch.recast.leeQTarget;
     ch.x = tgt.x - Math.cos(ang) * 28;
@@ -835,8 +895,11 @@ function castChampionSkill(ch, k, aimX, aimY){
     ch.tx = ch.x; ch.ty = ch.y;
     ch.recast.leeQT = 0; ch.recast.leeQTarget = null;
     ch.buff.leePassive = 2;
-    const dmg = (curAd * 0.88 + 45) * dmgMult;
-    dealDamage(ch, tgt, dmg, '#f39c12');
+
+    const baseQ = [55, 85, 115, 145, 175][rank - 1] + bonusAd * 1.15;
+    const missingRatio = Math.min(1, Math.max(0, (tgt.mhp - tgt.hp) / tgt.mhp));
+    const dmg = baseQ * (1 + missingRatio); // 잃은 체력 비례 최대 2배 물리
+    dealDamage(ch, tgt, dmg, '#f39c12', 'physical', { isSkill: true });
     aoeRings.push({x:tgt.x, y:tgt.y, r:45, col:'#f39c12', life:18});
     if (ch.isPlayer) addFloat(ch.x, ch.y - 30, "공명의 일격!", "#f39c12");
     return true;
@@ -846,11 +909,10 @@ function castChampionSkill(ch, k, aimX, aimY){
   if (ch.champId === 'ahri' && k === 'r' && ch.recast.ahriRCharges > 0 && ch.recast.ahriRT > 0){
     ch.recast.ahriRCharges--;
     if (ch.recast.ahriRCharges <= 0) ch.recast.ahriRT = 0;
-    performAhriDash(ch, ang, curAd, dmgMult);
+    performAhriDash(ch, ang, ap, ultRank);
     return true;
   }
 
-  // 일반 쿨타임 및 마나 체크
   if (ch.cd[k] > 0) return false;
   if (ch.mp < cost){
     if (ch.isPlayer) addFloat(ch.x, ch.y - 26, "마나가 부족합니다!", "#3498db");
@@ -865,19 +927,24 @@ function castChampionSkill(ch, k, aimX, aimY){
   // === 1. 가렌 (Garen) ===
   if (ch.champId === 'garen'){
     if (k === 'q'){
+      // Q: 다음 평타 강화 (30~150 + 총AD 50% 물리 피해, 평타 판정)
       ch.buff.qEmp = 3.5;
-      addFloat(ch.x, ch.y - 30, "결정타! (이속↑ + 다음 평타 침묵)", "#f1c40f");
+      addFloat(ch.x, ch.y - 30, "결정타! (다음 평타 강화+침묵)", "#f1c40f");
     } else if (k === 'w'){
       ch.buff.w = 2.0;
-      ch.buff.shield = Math.round((80 + ch.mhp * 0.08) * dmgMult);
+      ch.buff.shield = Math.round(80 + ch.mhp * 0.08 * rank);
       ch.buff.shieldT = 2.0;
       addFloat(ch.x, ch.y - 30, "용기! (피해감소 40% + 보호막)", "#3498db");
     } else if (k === 'e'){
-      ch.buff.eSpin = 3.0;
-      ch.buff.eTick = 0;
-      ch.buff.eDmg = (curAd * 0.32 + 15) * dmgMult;
-      addFloat(ch.x, ch.y - 30, "심판 회전!", "#e67e22");
+      // E: 회전당 4~20 + 총AD 38% 물리, 7회 회전
+      const baseSpin = [4, 8, 12, 16, 20][rank - 1];
+      ch.buff.eDmg = baseSpin + totalAd * 0.38;
+      ch.buff.eSpinsLeft = 7;
+      ch.buff.eSpin = 3.15;
+      ch.buff.eTick = 0.01;
+      addFloat(ch.x, ch.y - 30, "심판 (7회 회전)!", "#e67e22");
     } else if (k === 'r'){
+      // R: 150/300/450 + 대상 잃은 체력의 25/30/35% 고정 피해
       const ens = [...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0), ...jungleBosses.filter(b => b.respawn <= 0)];
       const tgt = ens.filter(e => Math.hypot(e.x - ch.x, e.y - ch.y) <= 280)
         .sort((a,b) => Math.hypot(a.x - aimX, a.y - aimY) - Math.hypot(b.x - aimX, b.y - aimY))[0];
@@ -886,11 +953,13 @@ function castChampionSkill(ch, k, aimX, aimY){
         if (ch.isPlayer) addFloat(ch.x, ch.y - 28, "사거리(280) 내 적 챔피언이 없습니다!", "#e74c3c");
         return false;
       }
-      const missingHp = tgt.mhp - tgt.hp;
-      const trueDmg = (115 + missingHp * 0.22) * dmgMult;
+      const baseR = [150, 300, 450][ultRank - 1];
+      const missingPct = [0.25, 0.30, 0.35][ultRank - 1];
+      const missingHp = Math.max(0, tgt.mhp - tgt.hp);
+      const trueDmg = baseR + missingHp * missingPct;
       aoeRings.push({x:tgt.x, y:tgt.y, r:75, col:'#f1c40f', life:28});
       addFloat(tgt.x, tgt.y - 45, "데마시아의 정의!", "#f1c40f");
-      dealDamage(ch, tgt, trueDmg, '#ffffff', true);
+      dealDamage(ch, tgt, trueDmg, '#ffffff', 'true', { isSkill: true });
     }
   }
 
@@ -898,8 +967,10 @@ function castChampionSkill(ch, k, aimX, aimY){
   if (ch.champId === 'leesin'){
     ch.buff.leePassive = 2;
     if (k === 'q'){
-      const dmg = (curAd * 0.8 + 38) * dmgMult;
-      projs.push({type:'lee_q', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*11.5, vy:Math.sin(ang)*11.5, ang, r:11, dmg, life:86, col:'#f39c12', pierce:false});
+      // Q 1타: 55~175 + 추가AD 115% 물리
+      const baseQ = [55, 85, 115, 145, 175][rank - 1];
+      const dmg = baseQ + bonusAd * 1.15;
+      projs.push({type:'lee_q', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*11.5, vy:Math.sin(ang)*11.5, ang, r:11, dmg, dmgType:'physical', isSkill:true, life:86, col:'#f39c12', pierce:false});
     } else if (k === 'w'){
       const allies = [
         ...getAllChampions().filter(c => c.team === ch.team && c !== ch && c.respawn <= 0),
@@ -916,21 +987,24 @@ function castChampionSkill(ch, k, aimX, aimY){
         ch.y = Math.max(50, Math.min(MAP_S - 50, ch.y + Math.sin(ang)*d));
         ch.tx = ch.x; ch.ty = ch.y;
       }
-      ch.buff.shield = Math.round((80 + curAd * 0.45) * dmgMult);
+      ch.buff.shield = Math.round(80 + bonusAd * 0.8 + ap * 0.8);
       ch.buff.shieldT = 2.5;
       addFloat(ch.x, ch.y - 30, "방호! (보호막)", "#f1c40f");
     } else if (k === 'e'){
-      const dmg = (curAd * 0.7 + 42) * dmgMult;
+      // E: 35~155 + 총AD 100% 마법 피해
+      const baseE = [35, 65, 95, 125, 155][rank - 1];
+      const dmg = baseE + totalAd * 1.0;
       aoeRings.push({x:ch.x, y:ch.y, r:210, col:'#e67e22', life:22});
       const ens = [...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0), ...minions.filter(m => m.team === enemyTeam), ...jungleBosses.filter(b => b.respawn <= 0)];
       ens.forEach(e => {
         if (Math.hypot(e.x - ch.x, e.y - ch.y) <= 210 + e.r){
-          dealDamage(ch, e, dmg, '#e67e22');
+          dealDamage(ch, e, dmg, '#74b9ff', 'magic', { isSkill: true });
           if (e.buff) e.buff.slowT = 2.0;
         }
       });
       addFloat(ch.x, ch.y - 30, "폭풍! (둔화)", "#e67e22");
     } else if (k === 'r'){
+      // R: 175/400/625 + 추가AD 200% 물리
       const ens = getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0);
       const tgt = ens.filter(e => Math.hypot(e.x - ch.x, e.y - ch.y) <= 190)
         .sort((a,b) => Math.hypot(a.x - aimX, a.y - aimY) - Math.hypot(b.x - aimX, b.y - aimY))[0];
@@ -944,48 +1018,61 @@ function castChampionSkill(ch, k, aimX, aimY){
       tgt.y = Math.max(60, Math.min(MAP_S - 60, tgt.y + Math.sin(kickA) * 300));
       tgt.tx = tgt.x; tgt.ty = tgt.y;
       if (tgt.buff) tgt.buff.stunT = 1.0;
-      const dmg = (curAd * 1.25 + 125) * dmgMult;
+      const baseR = [175, 400, 625][ultRank - 1];
+      const dmg = baseR + bonusAd * 2.0;
       aoeRings.push({x:tgt.x, y:tgt.y, r:65, col:'#ff4757', life:25});
       addFloat(tgt.x, tgt.y - 40, "용의 분노!", "#ff4757");
-      dealDamage(ch, tgt, dmg, '#ff4757');
+      dealDamage(ch, tgt, dmg, '#ff4757', 'physical', { isSkill: true });
     }
   }
 
   // === 3. 아리 (Ahri) ===
   if (ch.champId === 'ahri'){
     if (k === 'q'){
-      const dmg = (curAd * 0.63 + 38) * dmgMult;
-      projs.push({type:'ahri_q', state:'out', distTraveled:0, maxDist:440, hitSet:new Set(), team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*10, vy:Math.sin(ang)*10, ang, r:14, dmg, life:170, col:'#00d2ff', pierce:true});
+      // Q: 갈 때 40~140 + AP 50% 마법 / 올 때 40~140 + AP 50% 고정 피해
+      const baseQ = [40, 65, 90, 115, 140][rank - 1];
+      const dmg = baseQ + ap * 0.5;
+      projs.push({type:'ahri_q', state:'out', distTraveled:0, maxDist:440, hitSet:new Set(), team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*10, vy:Math.sin(ang)*10, ang, r:14, dmg, dmgType:'magic', isSkill:true, life:170, col:'#00d2ff', pierce:true});
     } else if (k === 'w'){
+      // W: 45~145 + AP 30% 마법 x 3발
       ch.buff.w = 2.0;
-      const dmg = (curAd * 0.32 + 22) * dmgMult;
+      const baseW = [45, 70, 95, 120, 145][rank - 1];
+      const dmg = baseW + ap * 0.3;
       const ens = [...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0), ...minions.filter(m => m.team === enemyTeam), ...jungleBosses.filter(b => b.respawn <= 0)]
         .filter(e => Math.hypot(e.x - ch.x, e.y - ch.y) <= 380)
         .sort((a,b) => Math.hypot(a.x - ch.x, a.y - ch.y) - Math.hypot(b.x - ch.x, b.y - ch.y));
       for (let i = 0; i < 3; i++){
         const a = ang + (i - 1) * 0.5;
         const hTgt = ens[i % Math.max(1, ens.length)] || null;
-        projs.push({type:'aa', team:ch.team, owner:ch, x:ch.x + Math.cos(a)*20, y:ch.y + Math.sin(a)*20, vx:Math.cos(a)*10, vy:Math.sin(a)*10, ang:a, r:7, dmg, life:65, col:'#74b9ff', pierce:false, homing:hTgt, spd:10});
+        projs.push({type:'skill_homing', team:ch.team, owner:ch, x:ch.x + Math.cos(a)*20, y:ch.y + Math.sin(a)*20, vx:Math.cos(a)*10, vy:Math.sin(a)*10, ang:a, r:7, dmg, dmgType:'magic', isSkill:true, life:65, col:'#74b9ff', pierce:false, homing:hTgt, spd:10});
       }
       addFloat(ch.x, ch.y - 30, "여우불!", "#74b9ff");
     } else if (k === 'e'){
-      const dmg = (curAd * 0.6 + 42) * dmgMult;
-      projs.push({type:'ahri_e', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*9.5, vy:Math.sin(ang)*9.5, ang, r:12, dmg, life:85, col:'#ff6b81', pierce:false});
+      // E: 80~200 + AP 75% 마법
+      const baseE = [80, 110, 140, 170, 200][rank - 1];
+      const dmg = baseE + ap * 0.75;
+      projs.push({type:'ahri_e', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*9.5, vy:Math.sin(ang)*9.5, ang, r:12, dmg, dmgType:'magic', isSkill:true, life:85, col:'#ff6b81', pierce:false});
     } else if (k === 'r'){
       ch.recast.ahriRCharges = 2;
       ch.recast.ahriRT = 10.0;
-      performAhriDash(ch, ang, curAd, dmgMult);
+      performAhriDash(ch, ang, ap, ultRank);
     }
   }
 
   // === 4. 이즈리얼 (Ezreal) ===
   if (ch.champId === 'ezreal'){
     if (k === 'q'){
-      const dmg = (curAd * 0.88 + 32) * dmgMult;
-      projs.push({type:'ez_q', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*12.5, vy:Math.sin(ang)*12.5, ang, r:10, dmg, life:88, col:'#00d2ff', pierce:false});
+      // Q: 20~120 + 총AD 130% + AP 15% 물리
+      const baseQ = [20, 45, 70, 95, 120][rank - 1];
+      const dmg = baseQ + totalAd * 1.3 + ap * 0.15;
+      projs.push({type:'ez_q', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*12.5, vy:Math.sin(ang)*12.5, ang, r:10, dmg, dmgType:'physical', isSkill:true, life:88, col:'#00d2ff', pierce:false});
     } else if (k === 'w'){
-      projs.push({type:'ez_w', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*10.5, vy:Math.sin(ang)*10.5, ang, r:14, dmg:0, wBonus:(curAd * 0.63 + 52) * dmgMult, life:76, col:'#f1c40f', pierce:false});
+      // W: 80~300 + 추가AD 100% + AP 75% 마법 (표식 폭발 시 적용)
+      const baseW = [80, 135, 190, 245, 300][rank - 1];
+      const wBonus = baseW + bonusAd * 1.0 + ap * 0.75;
+      projs.push({type:'ez_w', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*10.5, vy:Math.sin(ang)*10.5, ang, r:14, dmg:0, dmgType:'magic', isSkill:true, wBonus, life:76, col:'#f1c40f', pierce:false});
     } else if (k === 'e'){
+      // E: 80~280 + 추가AD 50% + AP 75% 마법
       const dist = Math.min(220, Math.hypot(aimX - ch.x, aimY - ch.y));
       ch.x = Math.max(50, Math.min(MAP_S - 50, ch.x + Math.cos(ang) * dist));
       ch.y = Math.max(50, Math.min(MAP_S - 50, ch.y + Math.sin(ang) * dist));
@@ -995,44 +1082,53 @@ function castChampionSkill(ch, k, aimX, aimY){
         .sort((a,b) => Math.hypot(a.x - ch.x, a.y - ch.y) - Math.hypot(b.x - ch.x, b.y - ch.y));
       if (ens[0]){
         const ba = Math.atan2(ens[0].y - ch.y, ens[0].x - ch.x);
-        const dmg = (curAd * 0.63 + 48) * dmgMult;
-        projs.push({type:'aa', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ba)*11, vy:Math.sin(ba)*11, ang:ba, r:8, dmg, life:60, col:'#ffeaa7', pierce:false, homing:ens[0], spd:11});
+        const baseE = [80, 130, 180, 230, 280][rank - 1];
+        const dmg = baseE + bonusAd * 0.5 + ap * 0.75;
+        projs.push({type:'skill_homing', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ba)*11, vy:Math.sin(ba)*11, ang:ba, r:8, dmg, dmgType:'magic', isSkill:true, life:60, col:'#74b9ff', pierce:false, homing:ens[0], spd:11});
       }
     } else if (k === 'r'){
-      const dmg = (curAd * 1.12 + 125) * dmgMult;
-      projs.push({type:'ult', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*13, vy:Math.sin(ang)*13, ang, r:32, dmg, life:330, col:'#f39c12', pierce:true});
+      // R: 350/525/700 + 추가AD 100% + AP 90% 마법
+      const baseR = [350, 525, 700][ultRank - 1];
+      const dmg = baseR + bonusAd * 1.0 + ap * 0.9;
+      projs.push({type:'ult', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*13, vy:Math.sin(ang)*13, ang, r:32, dmg, dmgType:'magic', isSkill:true, life:330, col:'#f39c12', pierce:true});
     }
   }
 
   // === 5. 블리츠크랭크 (Blitzcrank) ===
   if (ch.champId === 'blitzcrank'){
     if (k === 'q'){
-      const dmg = (curAd * 0.77 + 55) * dmgMult;
-      projs.push({type:'blitz_q', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*12.5, vy:Math.sin(ang)*12.5, ang, r:14, dmg, life:72, col:'#f1c40f', pierce:false});
+      // Q: 100~300 + AP 100% 마법 + 끌어당김
+      const baseQ = [100, 150, 200, 250, 300][rank - 1];
+      const dmg = baseQ + ap * 1.0;
+      projs.push({type:'blitz_q', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ang)*12.5, vy:Math.sin(ang)*12.5, ang, r:14, dmg, dmgType:'magic', isSkill:true, life:72, col:'#f1c40f', pierce:false});
     } else if (k === 'w'){
       ch.buff.blitzW = 4.0;
       addFloat(ch.x, ch.y - 30, "폭주! (이속·공속 대폭 증가)", "#f1c40f");
     } else if (k === 'e'){
+      // E: 총AD 200% 치명타 물리 + 1초 에어본 (다음 평타 강화)
       ch.buff.blitzE = true;
-      addFloat(ch.x, ch.y - 30, "강철 주먹 장전! (다음 평타 치명타+에어본)", "#ffeaa7");
+      addFloat(ch.x, ch.y - 30, "강철 주먹 장전! (총AD 200% 치명타+에어본)", "#ffeaa7");
     } else if (k === 'r'){
-      const dmg = (curAd * 0.9 + 110) * dmgMult;
+      // R: 275/400/525 + AP 100% 마법 + 1초 침묵
+      const baseR = [275, 400, 525][ultRank - 1];
+      const dmg = baseR + ap * 1.0;
       aoeRings.push({x:ch.x, y:ch.y, r:260, col:'#00d2ff', life:25});
       const ens = [...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0), ...minions.filter(m => m.team === enemyTeam), ...jungleBosses.filter(b => b.respawn <= 0)];
       ens.forEach(e => {
         if (Math.hypot(e.x - ch.x, e.y - ch.y) <= 260 + e.r){
-          dealDamage(ch, e, dmg, '#00d2ff');
+          dealDamage(ch, e, dmg, '#74b9ff', 'magic', { isSkill: true });
           if (e.buff) e.buff.silenceT = 1.0;
         }
       });
-      addFloat(ch.x, ch.y - 35, "정전기장! (광역 침묵)", "#00d2ff");
+      addFloat(ch.x, ch.y - 35, "정전기장! (1초 침묵)", "#00d2ff");
     }
   }
 
   return true;
 }
 
-function performAhriDash(ch, ang, curAd, dmgMult){
+function performAhriDash(ch, ang, ap, ultRank){
+  // R: 60/90/120 + AP 35% 마법 x 최대 3발
   ch.x = Math.max(50, Math.min(MAP_S - 50, ch.x + Math.cos(ang) * 195));
   ch.y = Math.max(50, Math.min(MAP_S - 50, ch.y + Math.sin(ang) * 195));
   ch.tx = ch.x; ch.ty = ch.y;
@@ -1040,15 +1136,16 @@ function performAhriDash(ch, ang, curAd, dmgMult){
   const ens = [...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0), ...minions.filter(m => m.team === enemyTeam), ...jungleBosses.filter(b => b.respawn <= 0)]
     .filter(e => Math.hypot(e.x - ch.x, e.y - ch.y) <= 360)
     .sort((a,b) => Math.hypot(a.x - ch.x, a.y - ch.y) - Math.hypot(b.x - ch.x, b.y - ch.y));
-  const dmg = (curAd * 0.52 + 45) * dmgMult;
+  const baseR = [60, 90, 120][ultRank - 1];
+  const dmg = baseR + ap * 0.35;
   for (let i = 0; i < Math.min(3, ens.length); i++){
     const ba = Math.atan2(ens[i].y - ch.y, ens[i].x - ch.x);
-    projs.push({type:'aa', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ba)*11, vy:Math.sin(ba)*11, ang:ba, r:7, dmg, life:60, col:'#d980fa', pierce:false, homing:ens[i], spd:11});
+    projs.push({type:'skill_homing', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(ba)*11, vy:Math.sin(ba)*11, ang:ba, r:7, dmg, dmgType:'magic', isSkill:true, life:60, col:'#d980fa', pierce:false, homing:ens[i], spd:11});
   }
   addFloat(ch.x, ch.y - 30, `혼령 질주! (남은 횟수 ${ch.recast.ahriRCharges})`, "#d980fa");
 }
 
-// 미니맵 클릭
+// [수정 3] 미니맵 클릭 (0.65 줌 뷰포트 크기 반영)
 mc.addEventListener('mousedown', e => {
   if (!gameStarted || e.button !== 0) return;
   const rect = mc.getBoundingClientRect();
@@ -1056,27 +1153,31 @@ mc.addEventListener('mousedown', e => {
   const my = (e.clientY - rect.top) / mc.height * MAP_S;
   cam.lock = false;
   document.getElementById('cam-status').innerText = "카메라: 자유 (Space: 내 챔피언 고정)";
-  cam.x = Math.max(0, Math.min(MAP_S - c.width, mx - c.width / 2));
-  cam.y = Math.max(0, Math.min(MAP_S - c.height, my - c.height / 2));
+  const vw = getViewW(), vh = getViewH();
+  cam.x = Math.max(0, Math.min(MAP_S - vw, mx - vw / 2));
+  cam.y = Math.max(0, Math.min(MAP_S - vh, my - vh / 2));
 });
 
+// [수정 3] 마우스 이동 시 0.65 줌 배율 역산하여 월드 좌표 갱신
 window.addEventListener('mousemove', e => {
   mouse.x = e.clientX; mouse.y = e.clientY;
-  mouse.wx = mouse.x + cam.x; mouse.wy = mouse.y + cam.y;
+  const wp = screenToWorld(mouse.x, mouse.y);
+  mouse.wx = wp.x; mouse.wy = wp.y;
 });
 
-// 우클릭 이동 & 공격
+// [수정 3] 우클릭 이동 & 공격 (0.65 줌 배율 역산 적용)
 window.addEventListener('mousedown', e => {
   if (!gameStarted || e.button !== 2 || p.respawn > 0 || over) return;
   p.recall = 0;
-  const wx = e.clientX + cam.x, wy = e.clientY + cam.y;
+  const wp = screenToWorld(e.clientX, e.clientY);
+  const wx = wp.x, wy = wp.y;
   const enemies = [
     ...aiChamps.filter(a => a.team === 'red' && a.respawn <= 0 && isVisibleToBlue(a.x, a.y)),
     ...minions.filter(m => m.team === 'red' && isVisibleToBlue(m.x, m.y)),
     ...jungleBosses.filter(b => b.respawn <= 0 && isVisibleToBlue(b.x, b.y)),
     ...structs.filter(s => s.team === 'red' && s.hp > 0)
   ];
-  const hit = enemies.find(en => Math.hypot(wx - en.x, wy - en.y) <= en.r + 18);
+  const hit = enemies.find(en => Math.hypot(wx - en.x, wy - en.y) <= en.r + 22);
   if (hit){
     if (hit.type && isStructInvulnerable(hit)){
       addFloat(hit.x, hit.y - 30, "앞선 포탑/억제기를 먼저 파괴해야 합니다!", "#f1c40f");
@@ -1107,7 +1208,6 @@ window.addEventListener('keydown', e => {
   if (!gameStarted) return;
   const k = e.key.toLowerCase();
 
-  // Ctrl + Q/W/E/R 단축키 스킬 레벨업
   if (e.ctrlKey && ['q', 'w', 'e', 'r'].includes(k)){
     e.preventDefault();
     levelUpSkill(k);
@@ -1154,7 +1254,6 @@ window.addEventListener('keydown', e => {
 
 const JUNGLE_SPOTS = [{x:1050,y:950}, {x:1500,y:1500}, {x:1950,y:2050}, {x:1150,y:1450}, {x:1850,y:1550}];
 
-// 각 AI 역할군(탑/미드/바텀)의 라인 웨이포인트에서 가장 가까운 지점 찾기
 function getLaneAnchorForBot(bot){
   const laneName = (bot.role === 'top' || bot.role === 'mid') ? bot.role : 'bot';
   const pts = bot.team === 'blue' ? LANE_PATHS[laneName] : [...LANE_PATHS[laneName]].reverse();
@@ -1167,41 +1266,43 @@ function getLaneAnchorForBot(bot){
   return pts[Math.min(pts.length - 1, idx + 1)];
 }
 
-function performBasicAttack(ch, target, curAd){
+// [수정 2 & 4] 기본 공격(평타) 실행 - 가렌 Q / 블리츠 E 강화 평타는 평타 판정으로 구조물 적용
+function performBasicAttack(ch, target, totalAd){
   const a = Math.atan2(target.y - ch.y, target.x - ch.x);
   ch.facing = a;
-  let dmg = curAd;
+  let dmg = totalAd;
   let isCrit = false;
 
-  // 가렌 Q 강화 평타 (1.5초 침묵)
+  // 가렌 Q 강화 평타 (30~150 + 총AD 50% 추가 물리 + 1.5초 침묵, 구조물 적용)
   if (ch.champId === 'garen' && ch.buff.qEmp > 0){
     ch.buff.qEmp = 0;
-    dmg = Math.round(dmg * 1.4 + 25 * Math.max(1, ch.slv.q));
+    const rank = Math.min(5, Math.max(1, ch.slv.q));
+    const baseQ = [30, 60, 90, 120, 150][rank - 1];
+    dmg = totalAd + baseQ + totalAd * 0.5;
     if (target.buff) target.buff.silenceT = 1.5;
-    addFloat(target.x, target.y - 36, "침묵! (1.5초)", "#f1c40f");
+    addFloat(target.x, target.y - 36, "결정타! (침묵 1.5초)", "#f1c40f");
   }
-  // 블리츠크랭크 E 강철 주먹 (치명타 + 1초 에어본 기절)
+  // 블리츠크랭크 E 강철 주먹 (총AD 200% 치명타 물리 + 1초 에어본, 구조물 적용)
   if (ch.champId === 'blitzcrank' && ch.buff.blitzE){
     ch.buff.blitzE = false;
-    dmg = Math.round(dmg * 1.75);
+    dmg = totalAd * 2.0;
     isCrit = true;
     if (target.buff) target.buff.stunT = 1.0;
-    addFloat(target.x, target.y - 36, "강철 주먹! (1초 기절)", "#ffeaa7");
-  }
-  // 이즈리얼 W 표식 폭발
-  if (target.buff && target.buff.ezMark > 0){
-    dmg += Math.round(target.buff.ezMark);
-    target.buff.ezMark = 0;
-    addFloat(target.x, target.y - 34, "정수 폭발!", "#f1c40f");
+    addFloat(target.x, target.y - 36, "강철 주먹! (200% 치명타)", "#ffeaa7");
   }
   if (ch.buff.leePassive > 0) ch.buff.leePassive--;
 
   if (ch.rng <= 165){
-    // 근접 공격 즉시 타격
-    dealDamage(ch, target, dmg, isCrit ? '#ff4757' : '#ffeaa7');
+    dealDamage(ch, target, dmg, isCrit ? '#ff4757' : '#ffeaa7', 'physical', { isAutoAttack: true, isSkill: false });
+    // 이즈리얼 W 표식 폭발
+    if (target.buff && target.buff.ezMark > 0){
+      const markDmg = target.buff.ezMark;
+      target.buff.ezMark = 0;
+      addFloat(target.x, target.y - 34, "정수 폭발!", "#f1c40f");
+      dealDamage(ch, target, markDmg, '#74b9ff', 'magic', { isSkill: true });
+    }
   } else {
-    // [패치 1] 원거리 평타 투사체 속도 묵직하게 조정 (17 -> 11)
-    projs.push({type:'aa', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(a)*11, vy:Math.sin(a)*11, ang:a, r:5, dmg, life:48, col:ch.team==='blue'?'#ffeaa7':'#ff7675', pierce:false, homing:target, spd:11});
+    projs.push({type:'aa', team:ch.team, owner:ch, x:ch.x, y:ch.y, vx:Math.cos(a)*11, vy:Math.sin(a)*11, ang:a, r:5, dmg, dmgType:'physical', isAutoAttack:true, isSkill:false, life:48, col:ch.team==='blue'?'#ffeaa7':'#ff7675', pierce:false, homing:target, spd:11});
   }
 }
 
@@ -1262,16 +1363,13 @@ function update(){
       ch.mp = Math.min(ch.mmp, ch.mp + dt * 280);
     }
 
-    // 가렌 패시브: 5초간 피해를 입지 않으면 매초 최대 체력의 2.5% 회복
     if (ch.champId === 'garen' && (gameTime - ch.passiveState.lastCombatT >= 5.0) && ch.hp < ch.mhp){
       ch.hp = Math.min(ch.mhp, ch.hp + ch.mhp * 0.025 * dt);
     }
 
-    // 쿨타임 감소
     for (let k in ch.cd) if (ch.cd[k] > 0) ch.cd[k] = Math.max(0, ch.cd[k] - dt);
     if (ch.atkCd > 0) ch.atkCd -= dt;
 
-    // 버프/디버프 타이머 감소
     const b = ch.buff;
     if (b.w > 0) b.w -= dt;
     if (b.d > 0) b.d -= dt;
@@ -1283,37 +1381,39 @@ function update(){
     if (b.slowT > 0) b.slowT -= dt;
     if (b.ezPassive > 0) b.ezPassive -= dt;
 
-    // 가렌 E 심판 회전 지속 피해
-    if (b.eSpin > 0){
+    // 가렌 E 심판 회전 지속 피해 (7회 회전, 회전당 4~20 + 총AD 38% 물리)
+    if (b.eSpin > 0 && b.eSpinsLeft > 0){
       b.eSpin -= dt;
       b.eTick -= dt;
       if (b.eTick <= 0){
-        b.eTick = 0.45;
+        b.eTick = 0.42;
+        b.eSpinsLeft--;
         const enemyTeam = ch.team === 'blue' ? 'red' : 'blue';
         const ens = [...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0), ...minions.filter(m => m.team === enemyTeam), ...jungleBosses.filter(jb => jb.respawn <= 0)];
-        ens.forEach(e => { if (Math.hypot(e.x - ch.x, e.y - ch.y) <= 165 + e.r) dealDamage(ch, e, b.eDmg, '#e67e22'); });
+        ens.forEach(e => {
+          if (Math.hypot(e.x - ch.x, e.y - ch.y) <= 165 + e.r){
+            dealDamage(ch, e, b.eDmg, '#e67e22', 'physical', { isSkill: true });
+          }
+        });
       }
     }
 
-    // 리 신 Q / 아리 R 재사용 타이머
     if (ch.recast.leeQT > 0){ ch.recast.leeQT -= dt; if (ch.recast.leeQT <= 0) ch.recast.leeQTarget = null; }
     if (ch.recast.ahriRT > 0){ ch.recast.ahriRT -= dt; if (ch.recast.ahriRT <= 0) ch.recast.ahriRCharges = 0; }
   });
 
-  // 플레이어 HUD 쿨타임 UI 갱신
   ['q','w','e','r','d','f','p'].forEach(k => {
     const el = document.getElementById('cd-' + k);
     if (!el) return;
     if (p.cd[k] > 0){ el.style.display = 'flex'; el.innerText = Math.ceil(p.cd[k]); }
     else el.style.display = 'none';
   });
-  // 리 신 Q2 / 아리 R 재사용 강조 테두리
   const sq = document.getElementById('slot-q'), sr = document.getElementById('slot-r');
   if (p.champId === 'leesin' && p.recast.leeQT > 0) sq.classList.add('active-recast'); else sq.classList.remove('active-recast');
   if (p.champId === 'ahri' && p.recast.ahriRT > 0 && p.recast.ahriRCharges > 0) sr.classList.add('active-recast'); else sr.classList.remove('active-recast');
 
   // 플레이어 이동 & 공격
-  const curAd = getChampAd(p);
+  const curAd = getChampTotalAd(p);
   const curAtkSpd = +(p.atkSpeed * (p.buff.blitzW > 0 ? 1.45 : 1) * (p.buff.ezPassive > 0 ? 1.25 : 1) * (p.buff.leePassive > 0 ? 1.35 : 1)).toFixed(2);
   const curMs = Math.round(p.ms * (p.buff.qEmp > 0 ? 1.25 : 1) * (p.buff.w > 0 && p.champId === 'ahri' ? 1.25 : 1) * (p.buff.blitzW > 0 ? 1.35 : 1) * (p.buff.d > 0 ? 1.35 : 1) * (p.buff.slowT > 0 ? 0.65 : 1));
 
@@ -1343,12 +1443,14 @@ function update(){
       } else {
         p.target = null;
         const dx = p.tx - p.x, dy = p.ty - p.y, dist = Math.hypot(dx, dy);
-        if (dist > spd){
+        // [수정 1] 목표 지점 반경 30px 이내 도달 시 이동 정지 (Deadzone)
+        if (dist > 30){
           p.facing = Math.atan2(dy, dx);
           p.x += (dx / dist) * spd; p.y += (dy / dist) * spd;
         }
       }
     }
+    resolveStructureCollision(p);
   }
 
   // 정글 보스 몬스터
@@ -1367,131 +1469,136 @@ function update(){
       boss.cd = 1.6;
       const tgt = attackers.sort((a,b) => Math.hypot(a.x - boss.x, a.y - boss.y) - Math.hypot(b.x - boss.x, b.y - boss.y))[0];
       const a = Math.atan2(tgt.y - boss.y, tgt.x - boss.x);
-      projs.push({type:'tower_shot', team:'neutral', x:boss.x, y:boss.y, vx:Math.cos(a)*10, vy:Math.sin(a)*10, ang:a, r:12, dmg:boss.ad, life:55, col:boss.col, pierce:false, homing:tgt, spd:10});
+      projs.push({type:'tower_shot', team:'neutral', x:boss.x, y:boss.y, vx:Math.cos(a)*10, vy:Math.sin(a)*10, ang:a, r:12, dmg:boss.ad, dmgType:'physical', isAutoAttack:true, life:55, col:boss.col, pierce:false, homing:tgt, spd:10});
     }
   });
 
-  // [패치 4 적용] AI 전투 성향 개편: 난투 금지 -> 정통 라인전 파밍 우선순위
+  // [수정 1] AI 챔피언: 0.3초(300ms)마다 한 번씩만 타겟 및 행동 결정 + 30px Deadzone으로 떨림 완벽 제거
   aiChamps.forEach((bot, bIdx) => {
     if (bot.respawn > 0 || bot.buff.stunT > 0) return;
     const enemyTeam = bot.team === 'blue' ? 'red' : 'blue';
-    const bAd = getChampAd(bot);
+    const bAd = getChampTotalAd(bot);
 
-    // 1순위: 내 체력이 30% 이하이거나, 아군 미니언 없이 적 포탑 사거리 안이면 즉시 후퇴(귀환)
-    const inEnemyTowerRange = structs.find(s =>
-      s.team === enemyTeam && s.type === 'tower' && s.hp > 0 &&
-      Math.hypot(s.x - bot.x, s.y - bot.y) <= s.rng + bot.r + 25
-    );
-    const towerHasAllyMinions = inEnemyTowerRange ? hasEnemyMinionsInTowerRange(inEnemyTowerRange) : true;
+    bot.aiDecisionTimer -= dt;
+    if (bot.aiDecisionTimer <= 0){
+      bot.aiDecisionTimer = 0.3; // 300ms 주기 제한
 
-    let goalX = bot.x, goalY = bot.y;
+      const inEnemyTowerRange = structs.find(s =>
+        s.team === enemyTeam && s.type === 'tower' && s.hp > 0 &&
+        Math.hypot(s.x - bot.x, s.y - bot.y) <= s.rng + bot.r + 25
+      );
+      const towerHasAllyMinions = inEnemyTowerRange ? hasEnemyMinionsInTowerRange(inEnemyTowerRange) : true;
 
-    if (bot.hp / bot.mhp <= 0.30){
-      // 체력 30% 이하 -> 즉시 우물로 귀환 이동
-      const w = bot.team === 'blue' ? wells[0] : wells[1];
-      goalX = w.x; goalY = w.y;
-    } else if (inEnemyTowerRange && !towerHasAllyMinions){
-      // 아군 미니언 없이 포탑 사거리 침범 시 즉시 포탑 밖으로 후퇴
-      const awayA = Math.atan2(bot.y - inEnemyTowerRange.y, bot.x - inEnemyTowerRange.x);
-      goalX = bot.x + Math.cos(awayA) * 160;
-      goalY = bot.y + Math.sin(awayA) * 160;
-    } else {
-      // 2순위: 시야/주변(520px) 내 적 챔피언 중 체력이 35% 이하로 낮을 때만 킬각 공격
-      const lowHpEnemyChamp = getAllChampions()
-        .filter(c => c.team === enemyTeam && c.respawn <= 0 && (c.hp / c.mhp) <= 0.35 && Math.hypot(c.x - bot.x, c.y - bot.y) <= 520)
-        .sort((a,b) => (a.hp / a.mhp) - (b.hp / b.mhp))[0];
-
-      if (lowHpEnemyChamp){
-        const d = Math.hypot(lowHpEnemyChamp.x - bot.x, lowHpEnemyChamp.y - bot.y);
-        const a = Math.atan2(lowHpEnemyChamp.y - bot.y, lowHpEnemyChamp.x - bot.x);
-        bot.facing = a;
-
-        // 킬각 추격 시 스킬 연계
-        if (d < 460){
-          if (bot.slv.r > 0 && bot.cd.r <= 0 && d < 320) castChampionSkill(bot, 'r', lowHpEnemyChamp.x, lowHpEnemyChamp.y);
-          else if (bot.slv.q > 0 && (bot.cd.q <= 0 || bot.recast.leeQT > 0)) castChampionSkill(bot, 'q', lowHpEnemyChamp.x, lowHpEnemyChamp.y);
-          else if (bot.slv.e > 0 && bot.cd.e <= 0 && d < 280) castChampionSkill(bot, 'e', lowHpEnemyChamp.x, lowHpEnemyChamp.y);
-          else if (bot.slv.w > 0 && bot.cd.w <= 0 && d < 300) castChampionSkill(bot, 'w', lowHpEnemyChamp.x, lowHpEnemyChamp.y);
-        }
-
-        if (d <= bot.rng + lowHpEnemyChamp.r){
-          if (bot.atkCd <= 0){
-            bot.atkCd = 1 / bot.atkSpeed;
-            performBasicAttack(bot, lowHpEnemyChamp, bAd);
-          }
-          goalX = bot.x; goalY = bot.y;
-        } else {
-          goalX = lowHpEnemyChamp.x; goalY = lowHpEnemyChamp.y;
-        }
+      if (bot.hp / bot.mhp <= 0.30){
+        const w = bot.team === 'blue' ? wells[0] : wells[1];
+        bot.target = null;
+        bot.aiGoalX = w.x; bot.aiGoalY = w.y;
+        bot.aiStateText = '후퇴 중';
+      } else if (inEnemyTowerRange && !towerHasAllyMinions){
+        const awayA = Math.atan2(bot.y - inEnemyTowerRange.y, bot.x - inEnemyTowerRange.x);
+        bot.target = null;
+        bot.aiGoalX = bot.x + Math.cos(awayA) * 180;
+        bot.aiGoalY = bot.y + Math.sin(awayA) * 180;
+        bot.aiStateText = '포탑 회피';
       } else {
-        // 3순위(평상시): 아군 미니언 뒤쪽 안전거리 유지 + 체력이 낮은 '적 미니언(막타)' 파밍 집중
-        const nearbyEnemyMins = minions.filter(m => m.team === enemyTeam && m.hp > 0 && Math.hypot(m.x - bot.x, m.y - bot.y) <= 550);
-        const nearbyAllyMins = minions.filter(m => m.team === bot.team && m.hp > 0 && Math.hypot(m.x - bot.x, m.y - bot.y) <= 550);
+        const lowHpEnemyChamp = getAllChampions()
+          .filter(c => c.team === enemyTeam && c.respawn <= 0 && (c.hp / c.mhp) <= 0.40 && Math.hypot(c.x - bot.x, c.y - bot.y) <= 520)
+          .sort((a,b) => (a.hp / a.mhp) - (b.hp / b.mhp))[0];
 
-        // 체력 비율이 가장 낮은 적 미니언(막타 우선) 정렬
-        const farmMinion = nearbyEnemyMins.sort((a,b) => (a.hp / a.mhp) - (b.hp / b.mhp))[0];
-        const pushableStruct = structs.find(s =>
-          s.team === enemyTeam && s.hp > 0 && !isStructInvulnerable(s) &&
-          Math.hypot(s.x - bot.x, s.y - bot.y) <= 450 &&
-          (s.type !== 'tower' || hasEnemyMinionsInTowerRange(s))
-        );
-        const jungleBossTarget = (bot.role === 'jungle')
-          ? jungleBosses.find(b => b.respawn <= 0 && Math.hypot(b.x - bot.x, b.y - bot.y) <= 380)
-          : null;
+        if (lowHpEnemyChamp){
+          bot.target = lowHpEnemyChamp;
+          bot.aiGoalX = lowHpEnemyChamp.x;
+          bot.aiGoalY = lowHpEnemyChamp.y;
+          bot.aiStateText = '킬각 교전';
+        } else {
+          const nearbyEnemyMins = minions.filter(m => m.team === enemyTeam && m.hp > 0 && Math.hypot(m.x - bot.x, m.y - bot.y) <= 550);
+          const nearbyAllyMins = minions.filter(m => m.team === bot.team && m.hp > 0 && Math.hypot(m.x - bot.x, m.y - bot.y) <= 550);
 
-        const farmTarget = farmMinion || pushableStruct || jungleBossTarget;
+          const farmMinion = nearbyEnemyMins.sort((a,b) => (a.hp / a.mhp) - (b.hp / b.mhp))[0];
+          const pushableStruct = structs.find(s =>
+            s.team === enemyTeam && s.hp > 0 && !isStructInvulnerable(s) &&
+            Math.hypot(s.x - bot.x, s.y - bot.y) <= 450 &&
+            (s.type !== 'tower' || hasEnemyMinionsInTowerRange(s))
+          );
+          const jungleBossTarget = (bot.role === 'jungle')
+            ? jungleBosses.find(b => b.respawn <= 0 && Math.hypot(b.x - bot.x, b.y - bot.y) <= 380)
+            : null;
 
-        if (farmTarget){
-          const d = Math.hypot(farmTarget.x - bot.x, farmTarget.y - bot.y);
-          const a = Math.atan2(farmTarget.y - bot.y, farmTarget.x - bot.x);
-          bot.facing = a;
-
-          // 원거리/근접에 맞춰 아군 미니언 뒤쪽 안전 사거리(최대 사거리 근처) 유지
-          const safeStandDist = Math.max(bot.rng * 0.85, 110);
-          if (d <= bot.rng + farmTarget.r){
-            if (bot.atkCd <= 0){
-              bot.atkCd = 1 / bot.atkSpeed;
-              performBasicAttack(bot, farmTarget, bAd);
-            }
-            // 미니언 파밍 중 견제용 Q 스킬만 간헐적 사용 (마나 50% 이상일 때)
-            if (farmMinion && bot.mp / bot.mmp > 0.5 && bot.slv.q > 0 && bot.cd.q <= 0 && farmMinion.hp <= bAd * 1.4){
-              castChampionSkill(bot, 'q', farmMinion.x, farmMinion.y);
-            }
-            goalX = bot.x; goalY = bot.y;
-          } else {
-            // 적 미니언 사거리 밖이면 아군 미니언 뒤쪽 안전 위치로 접근
+          const farmTarget = farmMinion || pushableStruct || jungleBossTarget;
+          if (farmTarget){
+            bot.target = farmTarget;
+            const d = Math.hypot(farmTarget.x - bot.x, farmTarget.y - bot.y);
+            const safeStandDist = Math.max(bot.rng * 0.85, 110);
             if (nearbyAllyMins.length > 0 && d > safeStandDist){
               const frontAlly = nearbyAllyMins.sort((a,b) => Math.hypot(a.x - farmTarget.x, a.y - farmTarget.y) - Math.hypot(b.x - farmTarget.x, b.y - farmTarget.y))[0];
               const backAng = Math.atan2(bot.y - farmTarget.y, bot.x - farmTarget.x);
-              goalX = frontAlly.x + Math.cos(backAng) * 75;
-              goalY = frontAlly.y + Math.sin(backAng) * 75;
+              bot.aiGoalX = frontAlly.x + Math.cos(backAng) * 75;
+              bot.aiGoalY = frontAlly.y + Math.sin(backAng) * 75;
             } else {
-              goalX = farmTarget.x; goalY = farmTarget.y;
+              bot.aiGoalX = farmTarget.x;
+              bot.aiGoalY = farmTarget.y;
             }
-          }
-        } else {
-          // 교전 중인 미니언이 없으면 자기 라인 웨이포인트 또는 정글 캠프로 차분히 이동
-          if (bot.role === 'jungle'){
-            const spot = JUNGLE_SPOTS[(Math.floor(Date.now()/14000) + bIdx) % JUNGLE_SPOTS.length];
-            goalX = spot.x; goalY = spot.y;
+            bot.aiStateText = farmMinion ? '라인 파밍' : '타워 공성';
           } else {
-            const anchor = getLaneAnchorForBot(bot);
-            goalX = anchor.x; goalY = anchor.y;
+            bot.target = null;
+            if (bot.role === 'jungle'){
+              const spot = JUNGLE_SPOTS[(Math.floor(Date.now()/14000) + bIdx) % JUNGLE_SPOTS.length];
+              bot.aiGoalX = spot.x; bot.aiGoalY = spot.y;
+              bot.aiStateText = '정글링';
+            } else {
+              const anchor = getLaneAnchorForBot(bot);
+              bot.aiGoalX = anchor.x; bot.aiGoalY = anchor.y;
+              bot.aiStateText = '라인 복귀';
+            }
           }
         }
       }
     }
 
-    const dx = goalX - bot.x, dy = goalY - bot.y, dist = Math.hypot(dx, dy);
+    // 결정된 타겟 공격 또는 목표 지점으로 부드럽게 이동 (30px Deadzone)
+    let moveX = bot.aiGoalX, moveY = bot.aiGoalY;
+    if (bot.target && bot.target.hp > 0 && (!bot.target.respawn || bot.target.respawn <= 0)){
+      const d = Math.hypot(bot.target.x - bot.x, bot.target.y - bot.y);
+      const a = Math.atan2(bot.target.y - bot.y, bot.target.x - bot.x);
+      bot.facing = a;
+
+      if (bot.target.lv && d < 460){
+        if (bot.slv.r > 0 && bot.cd.r <= 0 && d < 320) castChampionSkill(bot, 'r', bot.target.x, bot.target.y);
+        else if (bot.slv.q > 0 && (bot.cd.q <= 0 || bot.recast.leeQT > 0)) castChampionSkill(bot, 'q', bot.target.x, bot.target.y);
+        else if (bot.slv.e > 0 && bot.cd.e <= 0 && d < 280) castChampionSkill(bot, 'e', bot.target.x, bot.target.y);
+        else if (bot.slv.w > 0 && bot.cd.w <= 0 && d < 300) castChampionSkill(bot, 'w', bot.target.x, bot.target.y);
+      } else if (!bot.target.type && bot.mp / bot.mmp > 0.5 && bot.slv.q > 0 && bot.cd.q <= 0 && bot.target.hp <= bAd * 1.4 && d <= bot.rng + 120){
+        castChampionSkill(bot, 'q', bot.target.x, bot.target.y);
+      }
+
+      // 사거리 내 진입 시 제자리에 멈춰 공격만 수행 (경계선 전진/후퇴 지터링 방지)
+      if (d <= bot.rng + bot.target.r - 6){
+        if (bot.atkCd <= 0){
+          bot.atkCd = 1 / bot.atkSpeed;
+          performBasicAttack(bot, bot.target, bAd);
+        }
+        moveX = bot.x;
+        moveY = bot.y;
+      } else {
+        moveX = bot.target.x;
+        moveY = bot.target.y;
+      }
+    }
+
+    const dx = moveX - bot.x, dy = moveY - bot.y, dist = Math.hypot(dx, dy);
     const bSpd = (bot.ms / 60) * (bot.buff.slowT > 0 ? 0.65 : 1);
-    if (dist > bSpd){
+    // [수정 1] 목표 지점 반경 30px 이내 도달 시 이동 정지 (Deadzone)
+    if (dist > 30){
       bot.facing = Math.atan2(dy, dx);
       bot.x = Math.max(60, Math.min(MAP_S - 60, bot.x + (dx / dist) * bSpd));
       bot.y = Math.max(60, Math.min(MAP_S - 60, bot.y + (dy / dist) * bSpd));
     }
+
+    // [수정 1] 건물 중심 겹침 방지 충돌 처리
+    resolveStructureCollision(bot);
   });
 
-  // 미니언 업데이트
+  // [수정 1] 미니언 업데이트 (0.3초 AI 결정 주기 + 30px Deadzone + 구조물 충돌 방지)
   minions.forEach((m, idx) => {
     if (m.cd > 0) m.cd -= dt;
     if (m.buff.stunT > 0){ m.buff.stunT -= dt; return; }
@@ -1503,36 +1610,46 @@ function update(){
     m.rng = hasBaron ? m.baseRng * 1.35 : m.baseRng;
     const curMinAd = hasBaron ? Math.round(m.baseAd * 1.75) : m.baseAd;
 
-    const enemyTeam = m.team === 'blue' ? 'red' : 'blue';
-    const ens = [
-      ...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0),
-      ...minions.filter(x => x.team === enemyTeam),
-      ...structs.filter(s => s.team === enemyTeam && s.hp > 0 && !isStructInvulnerable(s))
-    ];
-    const near = ens.filter(e => Math.hypot(e.x - m.x, e.y - m.y) < 320)
-      .sort((a,b) => Math.hypot(a.x - m.x, a.y - m.y) - Math.hypot(b.x - m.x, b.y - m.y))[0];
+    m.aiDecisionTimer -= dt;
+    if (m.aiDecisionTimer <= 0){
+      m.aiDecisionTimer = 0.3;
+      const enemyTeam = m.team === 'blue' ? 'red' : 'blue';
+      const ens = [
+        ...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0),
+        ...minions.filter(x => x.team === enemyTeam),
+        ...structs.filter(s => s.team === enemyTeam && s.hp > 0 && !isStructInvulnerable(s))
+      ];
+      m.cachedTarget = ens.filter(e => Math.hypot(e.x - m.x, e.y - m.y) < 320)
+        .sort((a,b) => Math.hypot(a.x - m.x, a.y - m.y) - Math.hypot(b.x - m.x, b.y - m.y))[0] || null;
+    }
+
+    const near = (m.cachedTarget && m.cachedTarget.hp > 0 && (!m.cachedTarget.respawn || m.cachedTarget.respawn <= 0)) ? m.cachedTarget : null;
 
     let vx = 0, vy = 0;
     const mSpd = m.spd * (m.buff.slowT > 0 ? 0.65 : 1);
     if (near){
       const d = Math.hypot(near.x - m.x, near.y - m.y), a = Math.atan2(near.y - m.y, near.x - m.x);
-      if (d <= m.rng + near.r){
+      if (d <= m.rng + near.r - 4){
         if (m.cd <= 0){
           m.cd = 1.3;
           const finalDmg = (m.mType === 'cannon' && near.type === 'tower') ? Math.round(curMinAd * 1.5) : curMinAd;
           if (m.mType === 'caster' || m.mType === 'cannon'){
-            projs.push({type:'aa', team:m.team, x:m.x, y:m.y, vx:Math.cos(a)*9, vy:Math.sin(a)*9, ang:a, r:m.mType==='cannon'?7:4, dmg:finalDmg, life:50, col:m.team==='blue'?'#74b9ff':'#ff7675', pierce:false, homing:near, spd:9});
+            projs.push({type:'aa', team:m.team, x:m.x, y:m.y, vx:Math.cos(a)*9, vy:Math.sin(a)*9, ang:a, r:m.mType==='cannon'?7:4, dmg:finalDmg, dmgType:'physical', isAutoAttack:true, life:50, col:m.team==='blue'?'#74b9ff':'#ff7675', pierce:false, homing:near, spd:9});
           } else {
-            dealDamage(null, near, finalDmg, '#dfe6e9');
+            dealDamage(null, near, finalDmg, '#dfe6e9', 'physical', { isAutoAttack: true });
           }
         }
-      } else { vx += Math.cos(a) * mSpd; vy += Math.sin(a) * mSpd; }
+      } else {
+        vx += Math.cos(a) * mSpd; vy += Math.sin(a) * mSpd;
+      }
     } else {
       const wp = m.path[m.wpIdx] || m.path[m.path.length - 1];
       const d = Math.hypot(wp.x - m.x, wp.y - m.y);
       if (d < 65 && m.wpIdx < m.path.length - 1) m.wpIdx++;
-      const a = Math.atan2(wp.y - m.y, wp.x - m.x);
-      vx += Math.cos(a) * mSpd; vy += Math.sin(a) * mSpd;
+      if (d > 30){
+        const a = Math.atan2(wp.y - m.y, wp.x - m.x);
+        vx += Math.cos(a) * mSpd; vy += Math.sin(a) * mSpd;
+      }
     }
 
     for (let j = 0; j < minions.length; j++){
@@ -1541,21 +1658,21 @@ function update(){
       const dx = m.x - o.x, dy = m.y - o.y, dist = Math.hypot(dx, dy);
       const minD = m.r + o.r + 10;
       if (dist > 0 && dist < minD){
-        const push = (minD - dist) / minD * 1.35;
+        const push = (minD - dist) / minD * 1.1;
         vx += (dx / dist) * push; vy += (dy / dist) * push;
       }
     }
     m.x += vx; m.y += vy;
+    resolveStructureCollision(m);
   });
 
-  // [패치 3 적용] 포탑 공격 & 챔피언 연속 타격 시 40%씩 데미지 중첩 증가 (초반 다이브 차단)
+  // 포탑 공격
   structs.forEach(s => {
     if (s.hp <= 0 || s.type !== 'tower'){ s.target = null; s.heatStacks = 0; return; }
     if (s.cd > 0) s.cd -= dt;
     const enemyTeam = s.team === 'blue' ? 'red' : 'blue';
     const ens = [...minions.filter(m => m.team === enemyTeam), ...getAllChampions().filter(c => c.team === enemyTeam && c.respawn <= 0)];
 
-    // 기존 타겟이 죽었거나 사거리를 벗어나면 타겟 및 연타 중첩 초기화
     if (!s.target || s.target.hp <= 0 || (s.target.respawn && s.target.respawn > 0) || Math.hypot(s.target.x - s.x, s.target.y - s.y) > s.rng + s.target.r){
       s.target = ens.find(e => Math.hypot(e.x - s.x, e.y - s.y) <= s.rng + e.r) || null;
       s.heatStacks = 0;
@@ -1565,7 +1682,6 @@ function update(){
       s.cd = 1.25;
       const a = Math.atan2(s.target.y - s.y, s.target.x - s.x);
       let shotDmg = s.ad;
-      // 적 챔피언 타격 시 매 타격마다 40%씩 데미지 중첩 증가 (1타: 100%, 2타: 140%, 3타: 180%, 4타: 220%)
       if (s.target.lv){
         shotDmg = Math.round(s.ad * (1 + s.heatStacks * 0.40));
         s.heatStacks++;
@@ -1575,11 +1691,11 @@ function update(){
       } else {
         s.heatStacks = 0;
       }
-      projs.push({type:'tower_shot', team:s.team, x:s.x, y:s.y, vx:Math.cos(a)*12, vy:Math.sin(a)*12, ang:a, r:11, dmg:shotDmg, life:50, col:s.team==='blue'?'#3498db':'#ff3838', pierce:false, homing:s.target, spd:12});
+      projs.push({type:'tower_shot', team:s.team, x:s.x, y:s.y, vx:Math.cos(a)*12, vy:Math.sin(a)*12, ang:a, r:11, dmg:shotDmg, dmgType:'physical', isAutoAttack:true, life:50, col:s.team==='blue'?'#3498db':'#ff3838', pierce:false, homing:s.target, spd:12});
     }
   });
 
-  // 투사체 판정 (아리 왕복 Q, 블리츠 그랩 Q, 이즈리얼 쿨감 Q / 표식 W, 리 신 음파 Q 등 포함)
+  // 투사체 판정
   for (let i = projs.length - 1; i >= 0; i--){
     const pr = projs[i];
     if (pr.homing && pr.homing.hp > 0){
@@ -1588,12 +1704,17 @@ function update(){
       pr.ang = a; pr.vx = Math.cos(a) * hSpd; pr.vy = Math.sin(a) * hSpd;
     }
 
-    // 아리 Q 현혹의 구슬 왕복 로직
+    // 아리 Q 현혹의 구슬 왕복 (갈 때 마법 피해 -> 올 때 고정 피해)
     if (pr.type === 'ahri_q'){
       if (pr.state === 'out'){
         pr.x += pr.vx; pr.y += pr.vy;
         pr.distTraveled += Math.hypot(pr.vx, pr.vy);
-        if (pr.distTraveled >= pr.maxDist){ pr.state = 'return'; pr.hitSet.clear(); }
+        if (pr.distTraveled >= pr.maxDist){
+          pr.state = 'return';
+          pr.dmgType = 'true'; // 돌아올 때는 고정 피해
+          pr.col = '#ffffff';
+          pr.hitSet.clear();
+        }
       } else {
         const a = Math.atan2(pr.owner.y - pr.y, pr.owner.x - pr.x);
         pr.x += Math.cos(a) * 11.5; pr.y += Math.sin(a) * 11.5;
@@ -1626,8 +1747,7 @@ function update(){
       if (Math.hypot(pr.x - en.x, pr.y - en.y) <= pr.r + en.r){
         if (pr.hitSet) pr.hitSet.add(en);
 
-        // 특수 투사체 효과 처리
-        if (pr.type === 'lee_q' && pr.owner){
+        if (pr.type === 'lee_q' && pr.owner && !en.type){
           pr.owner.recast.leeQTarget = en;
           pr.owner.recast.leeQT = 3.0;
           if (pr.owner.isPlayer) addFloat(en.x, en.y - 36, "음파 적중! (3초 내 Q 재사용으로 돌진)", "#f39c12");
@@ -1641,11 +1761,11 @@ function update(){
           }
           addFloat(en.x, en.y - 36, "매혹! (1.5초)", "#ff6b81");
         }
-        if (pr.type === 'ez_q' && pr.owner){
+        if (pr.type === 'ez_q' && pr.owner && !en.type){
           for (let sk in pr.owner.cd) if (pr.owner.cd[sk] > 0) pr.owner.cd[sk] = Math.max(0, pr.owner.cd[sk] - 1.0);
           pr.owner.buff.ezPassive = 3.0;
         }
-        if (pr.type === 'ez_w' && en.buff){
+        if (pr.type === 'ez_w' && en.buff && !en.type){
           en.buff.ezMark = pr.wBonus;
           addFloat(en.x, en.y - 34, "정수의 흐름 표식!", "#f1c40f");
         }
@@ -1658,7 +1778,20 @@ function update(){
           addFloat(en.x, en.y - 38, "로켓 손 그랩!", "#f1c40f");
         }
 
-        if (pr.dmg > 0) dealDamage(pr.owner, en, pr.dmg, pr.col);
+        // 투사체 피해 적용 (구조물일 경우 isSkill: true && !isAutoAttack 이면 자동 면역 처리)
+        dealDamage(pr.owner, en, pr.dmg, pr.col, pr.dmgType || 'physical', {
+          isSkill: !!pr.isSkill,
+          isAutoAttack: !!pr.isAutoAttack
+        });
+
+        // 원거리 평타 적중 시 이즈리얼 W 표식 폭발
+        if (pr.isAutoAttack && en.buff && en.buff.ezMark > 0){
+          const markDmg = en.buff.ezMark;
+          en.buff.ezMark = 0;
+          addFloat(en.x, en.y - 34, "정수 폭발!", "#f1c40f");
+          dealDamage(pr.owner, en, markDmg, '#74b9ff', 'magic', { isSkill: true });
+        }
+
         if (!pr.pierce){ pr.life = 0; break; }
       }
     }
@@ -1672,18 +1805,20 @@ function update(){
   if (rn.hp <= 0){ over = true; document.getElementById('endt').innerText = "승리! (적군 넥서스 파괴)"; document.getElementById('end').style.display = 'flex'; }
   if (bn.hp <= 0){ over = true; document.getElementById('endt').innerText = "패배! (아군 넥서스 파괴)"; document.getElementById('end').style.display = 'flex'; }
 
-  // 카메라 이동
+  // [수정 3] 카메라 이동 (0.65 줌 배율 기준 뷰포트 경계 적용)
+  const vw = getViewW(), vh = getViewH();
   if (cam.lock){
-    cam.x = Math.max(0, Math.min(MAP_S - c.width, p.x - c.width / 2));
-    cam.y = Math.max(0, Math.min(MAP_S - c.height, p.y - c.height / 2));
+    cam.x = Math.max(0, Math.min(MAP_S - vw, p.x - vw / 2));
+    cam.y = Math.max(0, Math.min(MAP_S - vh, p.y - vh / 2));
   } else {
-    const edge = 35, camSpd = 18;
+    const edge = 35, camSpd = 24;
     if (mouse.x <= edge) cam.x = Math.max(0, cam.x - camSpd);
-    if (mouse.x >= c.width - edge) cam.x = Math.min(MAP_S - c.width, cam.x + camSpd);
+    if (mouse.x >= c.width - edge) cam.x = Math.min(MAP_S - vw, cam.x + camSpd);
     if (mouse.y <= edge) cam.y = Math.max(0, cam.y - camSpd);
-    if (mouse.y >= c.height - edge) cam.y = Math.min(MAP_S - c.height, cam.y + camSpd);
+    if (mouse.y >= c.height - edge) cam.y = Math.min(MAP_S - vh, cam.y + camSpd);
   }
-  mouse.wx = mouse.x + cam.x; mouse.wy = mouse.y + cam.y;
+  const wp = screenToWorld(mouse.x, mouse.y);
+  mouse.wx = wp.x; mouse.wy = wp.y;
 
   // HUD 갱신
   document.getElementById('tk-blue').innerText = teamKills.blue;
@@ -1694,6 +1829,7 @@ function update(){
   document.getElementById('lv').innerText = p.lv;
   document.getElementById('xp').innerText = Math.floor(p.xp / p.mxp * 100);
   document.getElementById('ad').innerText = curAd;
+  document.getElementById('ap').innerText = Math.round(p.ap || 0);
   document.getElementById('drake-tag').innerText = teamBuffs.blue.drakeStacks > 0 ? `(🐉+${teamBuffs.blue.drakeStacks*10}%)` : '';
   document.getElementById('baron-tag').innerText = teamBuffs.blue.baronTimer > 0 ? `👾 바론 버프 (${Math.ceil(teamBuffs.blue.baronTimer)}초)` : '';
   document.getElementById('as').innerText = curAtkSpd.toFixed(2);
@@ -1801,15 +1937,19 @@ function drawMinimap(){
   });
   mctx.drawImage(miniFogCanvas, 0, 0);
 
+  // [수정 3] 미니맵의 현재 시야 사각형도 0.65 줌 배율(넓어진 시야) 반영
   mctx.strokeStyle = '#ffffff'; mctx.lineWidth = 1.2;
-  mctx.strokeRect(cam.x * s, cam.y * s, c.width * s, c.height * s);
+  mctx.strokeRect(cam.x * s, cam.y * s, getViewW() * s, getViewH() * s);
 }
 
 function draw(){
   ctx.clearRect(0, 0, c.width, c.height);
   if (!gameStarted) return;
 
-  ctx.save(); ctx.translate(-cam.x, -cam.y);
+  // [수정 3] 카메라 줌 배율 0.65 적용 (맵과 공격로, 정글 벽, 주변 포탑이 넓게 보이도록 축소)
+  ctx.save();
+  ctx.scale(CAM_ZOOM, CAM_ZOOM);
+  ctx.translate(-cam.x, -cam.y);
 
   ctx.fillStyle = '#0f241c'; ctx.fillRect(0, 0, MAP_S, MAP_S);
   ctx.fillStyle = '#132d23';
@@ -1867,14 +2007,16 @@ function draw(){
     ctx.strokeStyle = invuln ? '#95a5a6' : (backdoorShield ? '#00d2ff' : '#c8aa6e'); ctx.lineWidth = invuln ? 2 : 3.5; ctx.stroke();
 
     const label = s.type === 'nexus' ? '넥서스' : s.name;
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 10.5px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(label, s.x, s.y + 4);
-    if (invuln){ ctx.fillStyle = '#bdc3c7'; ctx.font = '9.5px sans-serif'; ctx.fillText('🛡️무적', s.x, s.y + 16); }
-    else if (backdoorShield){ ctx.fillStyle = '#74b9ff'; ctx.font = '9px sans-serif'; ctx.fillText('🛡️방어70%', s.x, s.y + 16); }
-    ctx.textAlign = 'left';
+    if (invuln){ ctx.fillStyle = '#bdc3c7'; ctx.font = '10px sans-serif'; ctx.fillText('🛡️무적', s.x, s.y + 16); }
+    else if (backdoorShield){ ctx.fillStyle = '#74b9ff'; ctx.font = '9.5px sans-serif'; ctx.fillText('🛡️방어70%', s.x, s.y + 16); }
 
-    ctx.fillStyle = '#000'; ctx.fillRect(s.x - 30, s.y - s.r - 13, 60, 6);
-    ctx.fillStyle = invuln ? '#7f8c8d' : '#2ecc71'; ctx.fillRect(s.x - 30, s.y - s.r - 13, 60 * (s.hp / s.mhp), 6);
+    ctx.fillStyle = '#000'; ctx.fillRect(s.x - 34, s.y - s.r - 15, 68, 7);
+    ctx.fillStyle = invuln ? '#7f8c8d' : '#2ecc71'; ctx.fillRect(s.x - 34, s.y - s.r - 15, 68 * (s.hp / s.mhp), 7);
+    ctx.fillStyle = '#f0e6d2'; ctx.font = 'bold 10px sans-serif';
+    ctx.fillText(`${Math.ceil(s.hp)} / ${s.mhp}`, s.x, s.y - s.r - 20);
+    ctx.textAlign = 'left';
   });
 
   // 정글 보스
@@ -1908,7 +2050,7 @@ function draw(){
     ctx.fillStyle = '#2ecc71'; ctx.fillRect(m.x - bw/2, m.y - m.r - 8, bw * (m.hp / m.mhp), 4);
   });
 
-  // 5대5 챔피언 렌더링 (고유 색상, 스킬 이펙트, 보호막/상태이상 시각화)
+  // 5대5 챔피언 렌더링
   getAllChampions().forEach(ch => {
     if (ch.respawn > 0) return;
     if (ch.team === 'red' && !isVisibleToBlue(ch.x, ch.y)) return;
@@ -1918,7 +2060,6 @@ function draw(){
       ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.rng, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     }
 
-    // 가렌 E 심판 회전 칼날 이펙트
     if (ch.buff.eSpin > 0){
       ctx.save(); ctx.translate(ch.x, ch.y); ctx.rotate(gameTime * 14);
       ctx.strokeStyle = 'rgba(241, 196, 15, 0.8)'; ctx.lineWidth = 4;
@@ -1926,13 +2067,11 @@ function draw(){
       ctx.restore();
     }
 
-    // 바론 버프 오라
     if (teamBuffs[ch.team].baronTimer > 0){
       ctx.strokeStyle = 'rgba(217, 128, 250, 0.85)'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.r + 7, 0, Math.PI * 2); ctx.stroke();
     }
 
-    // 보호막 링
     if (ch.buff.shield > 0 && ch.buff.shieldT > 0){
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.r + 4, 0, Math.PI * 2); ctx.stroke();
@@ -1950,13 +2089,8 @@ function draw(){
 
     ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(ch.def.ico, ch.x, ch.y + 4);
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillText(`Lv.${ch.lv} ${ch.name}`, ch.x, ch.y - 37);
-    if (ch.buff.stunT > 0){ ctx.fillStyle = '#f1c40f'; ctx.fillText('💫기절', ch.x, ch.y - 49); }
-    else if (ch.buff.silenceT > 0){ ctx.fillStyle = '#e74c3c'; ctx.fillText('🔇침묵', ch.x, ch.y - 49); }
-    ctx.textAlign = 'left';
 
-    // 체력바 + 보호막바
+    // 체력바 + 보호막바 (Y = ch.y - 31)
     ctx.fillStyle = '#000'; ctx.fillRect(ch.x - 28, ch.y - 31, 56, 6);
     ctx.fillStyle = ch.team === 'blue' ? '#2ecc71' : '#e74c3c';
     ctx.fillRect(ch.x - 28, ch.y - 31, 56 * Math.max(0, ch.hp / ch.mhp), 6);
@@ -1964,6 +2098,29 @@ function draw(){
       ctx.fillStyle = '#ecf0f1';
       ctx.fillRect(ch.x - 28, ch.y - 31, Math.min(56, 56 * (ch.buff.shield / ch.mhp)), 6);
     }
+
+    // [수정 1] 머리 위 이름표와 스킬 상태 텍스트가 겹치지 않도록 Y축 간격 분리
+    // 이름표: Y = ch.y - 38
+    ctx.fillStyle = '#f0e6d2';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(`Lv.${ch.lv} ${ch.name}`, ch.x, ch.y - 38);
+
+    // 스킬 상태 / AI 상태 텍스트: 이름표보다 17px 위인 Y = ch.y - 55 에 표시하여 겹침 방지
+    let statusTxt = '';
+    let statusCol = '#0ac8b9';
+    if (ch.buff.stunT > 0){ statusTxt = '💫 기절/에어본'; statusCol = '#f1c40f'; }
+    else if (ch.buff.silenceT > 0){ statusTxt = '🔇 침묵'; statusCol = '#e74c3c'; }
+    else if (ch.buff.qEmp > 0){ statusTxt = '⚔️ 결정타 활성화'; statusCol = '#f1c40f'; }
+    else if (ch.buff.blitzE){ statusTxt = '👊 강철 주먹 장전'; statusCol = '#ffeaa7'; }
+    else if (ch.buff.eSpin > 0){ statusTxt = '🌀 심판 회전 중'; statusCol = '#e67e22'; }
+    else if (!ch.isPlayer && ch.aiStateText){ statusTxt = `[${ch.aiStateText}]`; statusCol = '#a09b8c'; }
+
+    if (statusTxt){
+      ctx.fillStyle = statusCol;
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(statusTxt, ch.x, ch.y - 55);
+    }
+    ctx.textAlign = 'left';
   });
 
   particles.forEach((pt, i) => {
@@ -1994,22 +2151,27 @@ function draw(){
 
   ctx.restore();
 
-  // 전장의 안개
+  // [수정 3] 전장의 안개 (0.65 줌 배율 반영)
   fctx.globalCompositeOperation = 'source-over';
   fctx.fillStyle = 'rgba(4, 10, 18, 0.62)'; fctx.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
   fctx.globalCompositeOperation = 'destination-out';
   getBlueVisionSources().forEach(vs => {
-    const sx = vs.x - cam.x, sy = vs.y - cam.y;
-    if (sx + vs.r < 0 || sx - vs.r > fogCanvas.width || sy + vs.r < 0 || sy - vs.r > fogCanvas.height) return;
-    const grad = fctx.createRadialGradient(sx, sy, vs.r * 0.72, sx, sy, vs.r);
+    const sx = (vs.x - cam.x) * CAM_ZOOM;
+    const sy = (vs.y - cam.y) * CAM_ZOOM;
+    const sr = vs.r * CAM_ZOOM;
+    if (sx + sr < 0 || sx - sr > fogCanvas.width || sy + sr < 0 || sy - sr > fogCanvas.height) return;
+    const grad = fctx.createRadialGradient(sx, sy, sr * 0.72, sx, sy, sr);
     grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
-    fctx.fillStyle = grad; fctx.beginPath(); fctx.arc(sx, sy, vs.r, 0, Math.PI * 2); fctx.fill();
+    fctx.fillStyle = grad; fctx.beginPath(); fctx.arc(sx, sy, sr, 0, Math.PI * 2); fctx.fill();
   });
   ctx.drawImage(fogCanvas, 0, 0);
 
-  ctx.save(); ctx.translate(-cam.x, -cam.y);
+  // [수정 3] 플로팅 텍스트 렌더링 (0.65 줌 스케일 반영)
+  ctx.save();
+  ctx.scale(CAM_ZOOM, CAM_ZOOM);
+  ctx.translate(-cam.x, -cam.y);
   dmgTexts.forEach((t, i) => {
-    ctx.fillStyle = t.color; ctx.font = t.isDmg ? 'bold 14px sans-serif' : 'bold 13px sans-serif';
+    ctx.fillStyle = t.color; ctx.font = t.isDmg ? 'bold 15px sans-serif' : 'bold 14px sans-serif';
     ctx.fillText(t.text, t.x - 16, t.y);
     t.y -= 0.7; t.life--; if (t.life <= 0) dmgTexts.splice(i, 1);
   });
